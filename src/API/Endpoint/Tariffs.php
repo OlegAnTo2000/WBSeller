@@ -18,9 +18,9 @@ class Tariffs extends AbstractEndpoint
      * Максимум - 1 запрос в минуту.
      * @see https://openapi.wb.ru/tariffs/api/ru/#tag/Komissii/paths/~1api~1v1~1tariffs~1commission/get
      *
-     * @return object Список комиссий
+     * @return array Список комиссий
      */
-    public function commission(): object
+    public function commission(): array
     {
         return $this->getRequest('/api/v1/tariffs/commission', [
             'locale' => $this->locale()
