@@ -11,5 +11,10 @@
 	</testsuites>
 	<php>
 		<env name="APIKEY"  value="" />
+		<env name="APIKEY_READONLY"  value="" />
+		<env name="CAMPAIGN_ID"  value="" />
+		<env name="NM_ID"  value="" />
+		<env name="DATE_FROM"  value="" />
+		<env name="DATE_TO"  value="" />
 	</php>
 </phpunit>
