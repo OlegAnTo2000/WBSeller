@@ -20,7 +20,7 @@ class ContentTest extends TestCase
         }
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('cards', $result);
+        $this->assertTrue(property_exists($result, 'cards'));
 
         if (count($result->cards) == 0) {
             $this->markTestSkipped('No cards in account');
@@ -44,10 +44,10 @@ class ContentTest extends TestCase
             $this->markTestSkipped($exc->getMessage());
         }
 
-        $this->assertObjectHasAttribute('cards', $result1);
+        $this->assertTrue(property_exists($result1, 'cards'));
         if ($result1->cursor->total == $limit) {
             $result2 = $Content->getCardsList('', $limit, $result1->cursor->updatedAt, $result1->cursor->nmID);
-            $this->assertObjectHasAttribute('cursor', $result2);
+            $this->assertTrue(property_exists($result2, 'cursor'));
         }
     }
 
@@ -92,17 +92,17 @@ class ContentTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('freeLimits', $result->data);
-            $this->assertObjectHasAttribute('paidLimits', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'freeLimits'));
+            $this->assertTrue(property_exists($result->data, 'paidLimits'));
         }
     }
 
     public function test_getTrashList()
     {
         $result = $this->Content()->Trash()->list();
-        $this->assertObjectHasAttribute('cards', $result);
-        $this->assertObjectHasAttribute('cursor', $result);
+        $this->assertTrue(property_exists($result, 'cards'));
+        $this->assertTrue(property_exists($result, 'cursor'));
         $this->assertIsArray($result->cards);
     }
 
@@ -127,14 +127,13 @@ class ContentTest extends TestCase
             [
                 'subjectID' => 105,
                 'variants' => [[
-                    'vendorCode' => 'test2',
-                    'title' => 'test2',
-                    'description' => 'test2',
-                    'description' => 'test2',
-                    'brand' => 'test2',
-                    'dimensions' => [],
+                    'vendorCode'      => 'test2',
+                    'title'           => 'test2',
+                    'description'     => 'test2',
+                    'brand'           => 'test2',
+                    'dimensions'      => [],
                     'characteristics' => [],
-                    'sizes' => [],
+                    'sizes'           => [],
                 ]],
             ]
         ]);

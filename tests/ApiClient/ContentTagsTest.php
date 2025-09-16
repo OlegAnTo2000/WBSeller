@@ -35,7 +35,7 @@ class ContentTagsTest extends TestCase
         $this->assertFalse($result1->error);
 
         if(!$result1->error) {
-            $this->assertObjectHasAttribute('data', $result1);
+            $this->assertTrue(property_exists($result1, 'data'));
             $id = $result1->data;
             $this->assertIsInt($id);
 

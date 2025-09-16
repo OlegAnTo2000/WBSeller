@@ -29,9 +29,9 @@ class FeedbacksTemplatesTest extends TestCase
         if($result->data->templates) {
             $template = array_shift($result->data->templates);
             
-            $this->assertObjectHasAttribute('id', $template);
-            $this->assertObjectHasAttribute('name', $template);
-            $this->assertObjectHasAttribute('text', $template);
+            $this->assertTrue(property_exists($template, 'id'));
+            $this->assertTrue(property_exists($template, 'name'));
+            $this->assertTrue(property_exists($template, 'text'));
         }
     }
 
@@ -39,10 +39,10 @@ class FeedbacksTemplatesTest extends TestCase
     {
         $result = $this->Templates->create('XYZ-Template', 'Template');
         
-        $this->assertObjectHasAttribute('data', $result);
+        $this->assertTrue(property_exists($result, 'data'));
         
         if($result->error == false) {
-            $this->assertObjectHasAttribute('id', $result->data);
+            $this->assertTrue(property_exists($result->data, 'id'));
             $id = $result->data->id;
             
             $update = $this->Templates->update($id, 'ABC', 'New template');

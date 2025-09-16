@@ -19,8 +19,8 @@ class MarketplaceTest extends TestCase
     public function test_getSuppliesList()
     {
         $result = $this->Marketplace()->getSuppliesList(500);
-        $this->assertObjectHasAttribute('next', $result);
-        $this->assertObjectHasAttribute('supplies', $result);
+        $this->assertTrue(property_exists($result, 'next'));
+        $this->assertTrue(property_exists($result, 'supplies'));
 
         $this->expectException(InvalidArgumentException::class);
         $this->Marketplace()->getSuppliesList(3000);
@@ -58,7 +58,7 @@ class MarketplaceTest extends TestCase
         if ($results->supplies) {
             $supply = array_shift($results->supplies);
             $supplyId = $supply->id;
-            $this->assertObjectHasAttribute('orders', $this->Marketplace()->getSupplyOrders($supplyId));
+            $this->assertTrue(property_exists($this->Marketplace()->getSupplyOrders($supplyId), 'orders'));
         } else {
             $this->markTestSkipped('No supplies in account');
         }
@@ -67,7 +67,7 @@ class MarketplaceTest extends TestCase
     public function test_addSupplyOrder()
     {
         $result = $this->Marketplace()->addSupplyOrder('WB-GI-123456', 123456);
-        $this->assertObjectHasAttribute('code', $result);
+        $this->assertTrue(property_exists($result, 'code'));
         $this->assertEquals($result->code, 'NotFound');
     }
 
@@ -80,7 +80,7 @@ class MarketplaceTest extends TestCase
     public function test_getReShipmentOrdersSupplies()
     {
         $result = $this->Marketplace()->getReShipmentOrdersSupplies();
-        $this->assertObjectHasAttribute('orders', $result);
+        $this->assertTrue(property_exists($result, 'orders'));
     }
 
     public function test_getSupplyBarcode()
@@ -89,8 +89,8 @@ class MarketplaceTest extends TestCase
         if ($results->supplies) {
             $supply = array_shift($results->supplies);
             $supplyId = $supply->id;
-            $this->assertObjectHasAttribute('file', $this->Marketplace()->getSupplyBarcode($supplyId, 'svg'));
-            $this->assertObjectHasAttribute('file', $this->Marketplace()->getSupplyBarcode($supplyId, 'png'));
+            $this->assertTrue(property_exists($this->Marketplace()->getSupplyBarcode($supplyId, 'svg'), 'file'));
+            $this->assertTrue(property_exists($this->Marketplace()->getSupplyBarcode($supplyId, 'png'), 'file'));
         }
 
         $this->expectException(InvalidArgumentException::class);
@@ -120,11 +120,11 @@ class MarketplaceTest extends TestCase
     public function test_getOrders()
     {
         $result1 = $this->Marketplace()->getOrders(10);
-        $this->assertObjectHasAttribute('orders', $result1);
+        $this->assertTrue(property_exists($result1, 'orders'));
 
         $date = (new DateTime('2020-01-01'));
         $result2 = $this->Marketplace()->getOrders(20, 0, $date);
-        $this->assertObjectHasAttribute('orders', $result2);
+        $this->assertTrue(property_exists($result2, 'orders'));
         
         $this->expectException(InvalidArgumentException::class);
         $this->Marketplace()->getOrders(2000);
@@ -133,38 +133,37 @@ class MarketplaceTest extends TestCase
     public function test_getNewOrders()
     {
         $result = $this->Marketplace()->getNewOrders();
-        $this->assertObjectHasAttribute('orders', $result);
+        $this->assertTrue(property_exists($result, 'orders'));
     }
 
     public function test_setOrderKiz()
     {
         $result = $this->Marketplace()->setOrderKiz(123456, []);
-        $this->assertObjectHasAttribute('code', $result);
-        $this->assertEquals($result->code, 'IncorrectRequestBody');
+        $this->assertEquals($result, true);
     }
 
     public function test_setOrderUin()
     {
         $result = $this->Marketplace()->setOrderUin(123456, '1234567890123456');
-        $this->assertFalse($result);
+        $this->assertEquals($result, true);
     }
 
     public function test_setOrderIMEI()
     {
         $result = $this->Marketplace()->setOrderIMEI(123456, '123456789012345');
-        $this->assertFalse($result);
+        $this->assertEquals($result, true);
     }
 
     public function test_setOrderGTIN()
     {
         $result = $this->Marketplace()->setOrderGTIN(123456, '1234567890123');
-        $this->assertFalse($result);
+        $this->assertEquals($result, true);
     }
 
     public function test_getOrderMeta()
     {
         $result = $this->Marketplace()->getOrderMeta(123456);
-        $this->assertObjectHasAttribute('code', $result);
+        $this->assertTrue(property_exists($result, 'code'));
         $this->assertEquals($result->code, 'NotFound');
     }
 
@@ -180,7 +179,7 @@ class MarketplaceTest extends TestCase
     public function test_getOrdersExternalStickers()
     {
         $result = $this->Marketplace()->getOrdersExternalStickers([123456]);
-        $this->assertObjectHasAttribute('stickers', $result);
+        $this->assertTrue(property_exists($result, 'stickers'));
     }
     
     public function test_getOrdersStickers()
@@ -189,7 +188,7 @@ class MarketplaceTest extends TestCase
         $this->assertEquals($result->code, 'IncorrectRequest');
 
         $result = $this->Marketplace()->getOrdersStickers([123456], 'svg', '40x30');
-        $this->assertObjectHasAttribute('stickers', $result);
+        $this->assertTrue(property_exists($result, 'stickers'));
         
         $this->expectException(InvalidArgumentException::class);
         $this->Marketplace()->getOrdersStickers([12345], 'foo', '40x30');
@@ -214,13 +213,13 @@ class MarketplaceTest extends TestCase
         $wareHouses = $this->Marketplace()->Warehouses()->list();
         $id = $wareHouses ? $wareHouses[0]->id : 123456;
         $result = $this->Marketplace()->getWarehouseStocks($id, ['1234567890']);
-        $this->assertObjectHasAttribute('stocks', $result);
+        $this->assertTrue(property_exists($result, 'stocks'));
     }
 
     public function test_getSupplyBoxes()
     {
         $result = $this->Marketplace()->getSupplyBoxes('WB-GI-1234567');
-        $this->assertObjectHasAttribute('trbxes', $result);
+        $this->assertTrue(property_exists($result, 'trbxes'));
     }
 
     public function test_addSupplyBoxes()

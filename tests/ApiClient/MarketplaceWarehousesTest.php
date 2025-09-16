@@ -25,9 +25,9 @@ class MarketplaceWarehousesTest extends TestCase
         $this->assertIsArray($result);
         
         $warehouse = array_shift($result);
-        $this->assertObjectHasAttribute('id', $warehouse);
-        $this->assertObjectHasAttribute('name', $warehouse);
-        $this->assertObjectHasAttribute('officeId', $warehouse);
+        $this->assertTrue(property_exists($warehouse, 'id'));
+        $this->assertTrue(property_exists($warehouse, 'name'));
+        $this->assertTrue(property_exists($warehouse, 'officeId'));
     }
 
     public function test_offices()
@@ -36,13 +36,13 @@ class MarketplaceWarehousesTest extends TestCase
         $this->assertIsArray($result);
         
         $office = array_shift($result);
-        $this->assertObjectHasAttribute('id', $office);
-        $this->assertObjectHasAttribute('name', $office);
-        $this->assertObjectHasAttribute('address', $office);
-        $this->assertObjectHasAttribute('city', $office);
-        $this->assertObjectHasAttribute('longitude', $office);
-        $this->assertObjectHasAttribute('latitude', $office);
-        $this->assertObjectHasAttribute('selected', $office);
+        $this->assertTrue(property_exists($office, 'id'));
+        $this->assertTrue(property_exists($office, 'name'));
+        $this->assertTrue(property_exists($office, 'address'));
+        $this->assertTrue(property_exists($office, 'city'));
+        $this->assertTrue(property_exists($office, 'longitude'));
+        $this->assertTrue(property_exists($office, 'latitude'));
+        $this->assertTrue(property_exists($office, 'selected'));
     }
 
     public function test_crud()
@@ -51,7 +51,7 @@ class MarketplaceWarehousesTest extends TestCase
         $office = array_shift($result);
 
         $warehouse = $this->Warehouses->create('XYZ', $office->id);
-        $this->assertObjectHasAttribute('id', $warehouse);
+        $this->assertTrue(property_exists($warehouse, 'id'));
         
         $updated = $this->Warehouses->update($warehouse->id, 'ABC-Test', $office->id);
         $this->assertTrue($updated);

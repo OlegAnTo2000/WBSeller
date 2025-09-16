@@ -17,8 +17,8 @@ class CommonTest extends TestCase
         $result = $this->Common()->sellerInfo();
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('name', $result);
-        $this->assertObjectHasAttribute('tradeMark', $result);
+        $this->assertTrue(property_exists($result, 'name'));
+        $this->assertTrue(property_exists($result, 'tradeMark'));
     }
 
 }

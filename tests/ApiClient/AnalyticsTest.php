@@ -86,7 +86,7 @@ class AnalyticsTest extends TestCase
 
         if($result) {
             $first = array_shift($result);
-            $this->assertObjectHasAttribute('nmId', $first);
+            $this->assertTrue(property_exists($first, 'nmId'));
         }
     }
 
@@ -98,7 +98,7 @@ class AnalyticsTest extends TestCase
 
         if($result) {
             $first = array_shift($result);
-            $this->assertObjectHasAttribute('dt', $first);
+            $this->assertTrue(property_exists($first, 'dt'));
         }
     }
 }

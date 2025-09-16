@@ -51,9 +51,9 @@ class QuestionsTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('countUnanswered', $result->data);
-            $this->assertObjectHasAttribute('countUnansweredToday', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'countUnanswered'));
+            $this->assertTrue(property_exists($result->data, 'countUnansweredToday'));
         }
     }
 
@@ -64,8 +64,8 @@ class QuestionsTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('hasNewQuestions', $result->data);
-            $this->assertObjectHasAttribute('hasNewFeedbacks', $result->data);
+            $this->assertTrue(property_exists($result->data, 'hasNewQuestions'));
+            $this->assertTrue(property_exists($result->data, 'hasNewFeedbacks'));
         }
     }
 
@@ -76,10 +76,10 @@ class QuestionsTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('countUnanswered', $result->data);
-            $this->assertObjectHasAttribute('countArchive', $result->data);
-            $this->assertObjectHasAttribute('questions', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'countUnanswered'));
+            $this->assertTrue(property_exists($result->data, 'countArchive'));
+            $this->assertTrue(property_exists($result->data, 'questions'));
             $this->assertIsArray($result->data->questions);
         }
     }
@@ -91,10 +91,10 @@ class QuestionsTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('file', $result->data);
-            $this->assertObjectHasAttribute('fileName', $result->data);
-            $this->assertObjectHasAttribute('contentType', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'file'));
+            $this->assertTrue(property_exists($result->data, 'fileName'));
+            $this->assertTrue(property_exists($result->data, 'contentType'));
         }
     }
 

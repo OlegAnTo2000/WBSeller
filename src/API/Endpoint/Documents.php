@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
-use Dakword\WBSeller\API\AbstractEndpoint;
 use DateTime;
+use InvalidArgumentException;
+use Dakword\WBSeller\API\AbstractEndpoint;
 
 class Documents extends AbstractEndpoint
 {
@@ -30,10 +31,10 @@ class Documents extends AbstractEndpoint
      * Максимум 1 запрос в 10 секунд
      * @link https://openapi.wb.ru/documents/api/ru/#/paths/~1api~1v1~1documents~1list/get
      * 
-     * @param DateTime $dateFrom    Начало периода. Используется только вместе с dateTo
-     * @param DateTime $dateTo      Конец периода. Используется только вместе с dateFrom
-     * @param string   $category    ID категории документов из поля name
-     * @param string   $serviceName Уникальный ID документа
+     * @param ?DateTime $dateFrom    Начало периода. Используется только вместе с dateTo
+     * @param ?DateTime $dateTo      Конец периода. Используется только вместе с dateFrom
+     * @param ?string   $category    ID категории документов из поля name
+     * @param ?string   $serviceName Уникальный ID документа
      * @param string   $orderBy     Сортировка:
      *                              date — по дате создания документа
      *                              category — по категории (только при locale=ru)
@@ -46,8 +47,8 @@ class Documents extends AbstractEndpoint
      * @throws InvalidArgumentException Неизвестное направление сортировки
      */
     public function list(
-        DateTime $dateFrom = null, DateTime $dateTo = null,
-        string $category = null, string $serviceName = null,
+        ?DateTime $dateFrom = null, ?DateTime $dateTo = null,
+        ?string $category = null, ?string $serviceName = null,
         string $orderBy = 'date', string $sortOrder = 'desc'
     ): array
     {

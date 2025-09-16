@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use InvalidArgumentException;
 use Dakword\WBSeller\API\Endpoint\Marketplace;
 
 class WBGO

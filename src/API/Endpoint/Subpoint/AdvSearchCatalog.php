@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
-use Dakword\WBSeller\API\Endpoint\Adv;
+use DateTime;
 use InvalidArgumentException;
+use Dakword\WBSeller\API\Endpoint\Adv;
 
 class AdvSearchCatalog
 {
@@ -122,7 +123,7 @@ class AdvSearchCatalog
      *
      * @return array
      */
-    public function deleteAdvertPluses(int $id): bool
+    public function deleteAdvertPluses(int $id): array
     {
         return $this->setAdvertPluses($id, []);
     }

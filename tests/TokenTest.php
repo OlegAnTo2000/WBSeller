@@ -10,11 +10,11 @@ use DateTime;
 class TokenTest extends TestCase
 {
     private $testToken = [
-        'exp' => 1722882872,
-        's' => 1073741832,
-        'sid' => '22e91535-959d-4978-95d0-44c9f0d93d3c',
-        'oid' => 3931956,
-        't' => false,
+        'exp'    => 1722882872,
+        's'      => 1073741832,
+        'sid'    => '22e91535-959d-4978-95d0-44c9f0d93d3c',
+        'oid'    => 3931956,
+        't'      => false,
         'access' => [3 => 'Цены и скидки'],
     ];
 
@@ -52,8 +52,8 @@ class TokenTest extends TestCase
         $token = $this->APIToken();
         $payload = $token->getPayload();
 
-        $this->assertObjectNotHasAttribute('id', $payload);
-        $this->assertObjectHasAttribute('exp', $payload);
+        $this->assertTrue(property_exists($payload, 'exp'));
+        $this->assertFalse(property_exists($payload, 'id'));
         $this->assertEquals($this->testToken['sid'], $token->sellerUUID());
     }
 
@@ -61,7 +61,7 @@ class TokenTest extends TestCase
     {
         $token = $this->APIToken();
 
-        $this->assertInstanceOf('DateTime', $token->expireDate());
+        $this->assertInstanceOf(DateTime::class, $token->expireDate());
         $this->assertEquals(
             (new DateTime())->setTimestamp($this->testToken['exp'])->format('Y-m-d H:i:s'),
             $token->expireDate()->format('Y-m-d H:i:s')

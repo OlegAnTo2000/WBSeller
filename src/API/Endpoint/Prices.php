@@ -10,15 +10,15 @@ use InvalidArgumentException;
 
 class Prices extends AbstractEndpoint
 {
-    /**
-     * Сервис для работы с календарем акций
-     *
-     * @return Calendar
-     */
-    public function Calendar(): Calendar
-    {
-        return new Calendar($this);
-    }
+    // /**
+    //  * Сервис для работы с календарем акций
+    //  *
+    //  * @return Calendar
+    //  */
+    // public function Calendar(): Calendar
+    // {
+    //     return new Calendar($this);
+    // }
 
     /**
      * Получение информации по ценам и скидкам.
@@ -58,8 +58,8 @@ class Prices extends AbstractEndpoint
     public function getNmIdPrice(int $nmID): object
     {
         return $this->getRequest('/api/v2/list/goods/filter', [
-            'offset' => 0,
-            'limit' => 1_000,
+            'offset'     => 0,
+            'limit'      => 1_000,
             'filterNmID' => $nmID,
         ]);
     }

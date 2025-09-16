@@ -129,8 +129,7 @@ abstract class TestCase extends BaseTestCase
     protected function getRealNms($limit = 10)
     {
         try {
-            $result = $this->Content()
-                ->getCardsList('', $limit);
+            $result = $this->Content()->getCardsList('', $limit);
         } catch (ApiTimeRestrictionsException $exc) {
             $this->markTestSkipped($exc->getMessage());
         }
@@ -139,7 +138,7 @@ abstract class TestCase extends BaseTestCase
             $this->markTestSkipped('No cards in account');
         }
 
-        return $list = array_column($result->cards, 'nmID');
+        return array_column($result->cards, 'nmID');
     }
 
 }

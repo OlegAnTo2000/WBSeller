@@ -29,8 +29,8 @@ class FeedbacksTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('hasNewQuestions', $result->data);
-            $this->assertObjectHasAttribute('hasNewFeedbacks', $result->data);
+            $this->assertTrue(property_exists($result->data, 'hasNewQuestions'));
+            $this->assertTrue(property_exists($result->data, 'hasNewFeedbacks'));
         }
     }
 
@@ -41,10 +41,10 @@ class FeedbacksTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('countUnanswered', $result->data);
-            $this->assertObjectHasAttribute('countUnansweredToday', $result->data);
-            $this->assertObjectHasAttribute('valuation', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'countUnanswered'));
+            $this->assertTrue(property_exists($result->data, 'countUnansweredToday'));
+            $this->assertTrue(property_exists($result->data, 'valuation'));
         }
     }
 
@@ -55,10 +55,10 @@ class FeedbacksTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('countUnanswered', $result->data);
-            $this->assertObjectHasAttribute('countArchive', $result->data);
-            $this->assertObjectHasAttribute('feedbacks', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'countUnanswered'));
+            $this->assertTrue(property_exists($result->data, 'countArchive'));
+            $this->assertTrue(property_exists($result->data, 'feedbacks'));
             $this->assertIsArray($result->data->feedbacks);
         }
     }
@@ -70,8 +70,8 @@ class FeedbacksTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('feedbacks', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'feedbacks'));
             $this->assertIsArray($result->data->feedbacks);
         }
     }
@@ -82,10 +82,10 @@ class FeedbacksTest extends TestCase
         $this->assertFalse($result->error);
 
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
-            $this->assertObjectHasAttribute('file', $result->data);
-            $this->assertObjectHasAttribute('fileName', $result->data);
-            $this->assertObjectHasAttribute('contentType', $result->data);
+            $this->assertTrue(property_exists($result, 'data'));
+            $this->assertTrue(property_exists($result->data, 'file'));
+            $this->assertTrue(property_exists($result->data, 'fileName'));
+            $this->assertTrue(property_exists($result->data, 'contentType'));
         }
     }
 
@@ -122,7 +122,7 @@ class FeedbacksTest extends TestCase
 
         $this->assertFalse($result->error);
         if(!$result->error) {
-            $this->assertObjectHasAttribute('data', $result);
+            $this->assertTrue(property_exists($result, 'data'));
         }
     }
 
@@ -132,8 +132,8 @@ class FeedbacksTest extends TestCase
 
         $this->assertFalse($result->error);
         if(!$result->error) {
-            $this->assertObjectHasAttribute('feedbackValuations', $result->data);
-            $this->assertObjectHasAttribute('productValuations', $result->data);
+            $this->assertTrue(property_exists($result->data, 'feedbackValuations'));
+            $this->assertTrue(property_exists($result->data, 'productValuations'));
         }
     }
 

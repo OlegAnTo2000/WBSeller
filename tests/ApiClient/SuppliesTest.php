@@ -45,7 +45,7 @@ class SuppliesTest extends TestCase
             ['quantity' => 1, 'barcode' => '123456']
         ]);
 
-        $this->assertObjectHasAttribute('requestId', $result);
+        $this->assertTrue(property_exists($result, 'requestId'));
         $this->assertEquals('123456', $result->result[0]->barcode);
     }
 

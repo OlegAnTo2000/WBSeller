@@ -1,0 +1,10 @@
+parameters:
+	tmpDir: null
+	level: 0
+	paths:
+		- src
+		- tests
+	excludePaths:
+		analyse:
+			- */vendor/*
+			- */vendor/**/*

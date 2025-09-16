@@ -48,7 +48,7 @@ class PricesTest extends TestCase
     public function test_getNmIdSizesPrices()
     {
         $result = $this->Prices()->getNmIdSizesPrices(1234567);
-        $this->assertObjectHasAttribute('listGoods', $result->data);
+        $this->assertTrue(property_exists($result->data, 'listGoods'));
     }
 
     /**
@@ -64,7 +64,7 @@ class PricesTest extends TestCase
             ]
         ]);
 
-        $this->assertObjectHasAttribute('data', $result);
+        $this->assertTrue(property_exists($result, 'data'));
         $this->assertTrue($result->error);
     }
 
@@ -75,7 +75,7 @@ class PricesTest extends TestCase
     {
         $result = $this->Prices()->getUploadStatus(1234567);
 
-        $this->assertObjectHasAttribute('data', $result);
+        $this->assertTrue(property_exists($result, 'data'));
         $this->assertNull($result->data);
     }
 
@@ -86,7 +86,7 @@ class PricesTest extends TestCase
     {
         $result = $this->Prices()->getBufferUploadStatus(1234567);
 
-        $this->assertObjectHasAttribute('data', $result);
+        $this->assertTrue(property_exists($result, 'data'));
         $this->assertNull($result->data);
     }
 
@@ -97,7 +97,7 @@ class PricesTest extends TestCase
     {
         $result = $this->Prices()->getUpload(1234567);
 
-        $this->assertObjectHasAttribute('data', $result);
+        $this->assertTrue(property_exists($result, 'data'));
         $this->assertNull($result->data->uploadID);
     }
 

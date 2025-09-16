@@ -24,9 +24,9 @@ class MarketplacePassesTest extends TestCase
         $this->assertIsArray($result);
         if($result) {
             $pass = array_shift($result);
-            $this->assertObjectHasAttribute('id', $pass);
-            $this->assertObjectHasAttribute('officeId', $pass);
-            $this->assertObjectHasAttribute('dateEnd', $pass);
+            $this->assertTrue(property_exists($pass, 'id'));
+            $this->assertTrue(property_exists($pass, 'officeId'));
+            $this->assertTrue(property_exists($pass, 'dateEnd'));
         }
     }
 
@@ -36,9 +36,9 @@ class MarketplacePassesTest extends TestCase
         $this->assertIsArray($result);
         
         $office = array_shift($result);
-        $this->assertObjectHasAttribute('id', $office);
-        $this->assertObjectHasAttribute('name', $office);
-        $this->assertObjectHasAttribute('address', $office);
+        $this->assertTrue(property_exists($office, 'id'));
+        $this->assertTrue(property_exists($office, 'name'));
+        $this->assertTrue(property_exists($office, 'address'));
     }
 
     public function test_crud()
@@ -47,7 +47,7 @@ class MarketplacePassesTest extends TestCase
         $office = array_shift($result);
 
         $pass = $this->Passes->create($office->id, 'Газелька', 'X999XX99', 'Имя', 'Фамилия');
-        $this->assertObjectHasAttribute('id', $pass);
+        $this->assertTrue(property_exists($pass, 'id'));
         
         $updated = $this->Passes->update($pass->id, $office->id, 'Газель', 'О777ММ77', 'Водитель', 'Газели');
         $this->assertTrue($updated);

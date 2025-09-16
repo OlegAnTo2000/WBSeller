@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
 use Dakword\WBSeller\API\Endpoint\Marketplace;
+use DateTime;
 use InvalidArgumentException;
 
 class DBS
@@ -37,15 +38,15 @@ class DBS
      *
      * @param int      $limit     Параметр пагинации. Устанавливает предельное количество возвращаемых данных. (не более 1000)
      * @param int      $next      Параметр пагинации. Устанавливает значение, с которого надо получить следующий пакет данных. Для получения полного списка данных должен быть равен 0 в первом запросе.
-     * @param DateTime $dateStart С какой даты вернуть сборочные задания (заказы)
+     * @param ?DateTime $dateStart С какой даты вернуть сборочные задания (заказы)
      *                            по умолчанию — дата за 30 дней до запроса
-     * @param DateTime $dateEnd   По какую дату вернуть сборочные задания (заказы)
+     * @param ?DateTime $dateEnd   По какую дату вернуть сборочные задания (заказы)
      *
      * @return object {next: int, orders: [object, ...]}
      *
      * @throws InvalidArgumentException Превышение значения параметра limit
      */
-    public function getOrders(int $limit = 1_000, int $next = 0, DateTime $dateStart = null, DateTime $dateEnd = null): object
+    public function getOrders(int $limit = 1_000, int $next = 0, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): object
     {
         $maxLimit = 1_000;
         if ($limit > $maxLimit) {

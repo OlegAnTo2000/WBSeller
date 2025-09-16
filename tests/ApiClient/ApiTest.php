@@ -23,9 +23,9 @@ class ApiTest extends TestCase
 
         $API = new API([
             'keys' => [
-                'apikey' => 'XXX',
+                'apikey'  => 'XXX',
                 'statkey' => 'YYY',
-                'advkey' => 'ZZZ',
+                'advkey'  => 'ZZZ',
             ]
         ]);
         $API->Prices()->getPrices();
@@ -35,9 +35,9 @@ class ApiTest extends TestCase
     {
         $API1 = new API([
             'keys' => [
-                'apikey' => 'XXX',
+                'apikey'  => 'XXX',
                 'statkey' => 'YYY',
-                'advkey' => 'ZZZ',
+                'advkey'  => 'ZZZ',
             ],
             'locale' => 'en'
         ]);
@@ -63,7 +63,7 @@ class ApiTest extends TestCase
         $result = $Content->ping();
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('Status', $result);
+        $this->assertTrue(property_exists($result, 'Status'));
         $this->assertEquals('OK', $result->Status);
     }
 

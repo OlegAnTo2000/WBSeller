@@ -23,9 +23,9 @@ class TariffsTest extends TestCase
     {
         $result = $this->API()->Tariffs()->box(new \DateTime());
 
-        $this->assertObjectHasAttribute('dtNextBox', $result);
-        $this->assertObjectHasAttribute('dtTillMax', $result);
-        $this->assertObjectHasAttribute('warehouseList', $result);
+        $this->assertTrue(property_exists($result, 'dtNextBox'));
+        $this->assertTrue(property_exists($result, 'dtTillMax'));
+        $this->assertTrue(property_exists($result, 'warehouseList'));
     }
 
     /**
@@ -35,9 +35,9 @@ class TariffsTest extends TestCase
     {
         $result = $this->API()->Tariffs()->pallet(new \DateTime());
 
-        $this->assertObjectHasAttribute('dtNextPallet', $result);
-        $this->assertObjectHasAttribute('dtTillMax', $result);
-        $this->assertObjectHasAttribute('warehouseList', $result);
+        $this->assertTrue(property_exists($result, 'dtNextPallet'));
+        $this->assertTrue(property_exists($result, 'dtTillMax'));
+        $this->assertTrue(property_exists($result, 'warehouseList'));
     }
 
     /**
@@ -47,10 +47,10 @@ class TariffsTest extends TestCase
     {
         $result = $this->API()->Tariffs()->return(new \DateTime());
 
-        $this->assertObjectHasAttribute('dtNextDeliveryDumpKgt', $result);
-        $this->assertObjectHasAttribute('dtNextDeliveryDumpSrg', $result);
-        $this->assertObjectHasAttribute('dtNextDeliveryDumpSup', $result);
-        $this->assertObjectHasAttribute('warehouseList', $result);
+        $this->assertTrue(property_exists($result, 'dtNextDeliveryDumpKgt'));
+        $this->assertTrue(property_exists($result, 'dtNextDeliveryDumpSrg'));
+        $this->assertTrue(property_exists($result, 'dtNextDeliveryDumpSup'));
+        $this->assertTrue(property_exists($result, 'warehouseList'));
     }
 
 }

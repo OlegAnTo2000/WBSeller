@@ -1,6 +1,6 @@
 {
     "name": "oleganto2000/wbseller",
-    "description": "Wildberries API client",
+    "description": "Wildberries API client, fork from https://github.com/Dakword/WBSeller",
     "keywords": ["wildberries", "api", "openapi", "php"],
     "license": "MIT",
     "type": "library",
@@ -9,10 +9,13 @@
         "guzzlehttp/guzzle": "^7.5"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5.0"
+        "phpunit/phpunit"          : "12",
+        "phpstan/phpstan"          : "^2.1",
+        "friendsofphp/php-cs-fixer": "^3.86"
     },
     "scripts": {
-        "test": "phpunit -v -c tests/phpunit.xml tests"
+        "test": "vendor/bin/phpunit -v -c tests/phpunit.xml tests",
+        "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=4G"
     },
     "autoload": {
         "psr-4": {

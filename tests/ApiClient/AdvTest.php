@@ -11,7 +11,7 @@ use InvalidArgumentException;
 class AdvTest extends TestCase
 {
 
-    private $Adv;
+    private Adv $Adv;
 
     public function setUp(): void
     {
@@ -30,7 +30,7 @@ class AdvTest extends TestCase
         $result = $this->Adv->config();
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('config', $result);
+        $this->assertTrue(property_exists($result, 'config'));
         $this->assertIsArray($result->config);
     }
 
@@ -39,7 +39,7 @@ class AdvTest extends TestCase
         $result = $this->Adv->count();
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('all', $result);
+        $this->assertTrue(property_exists($result, 'all'));
         $this->assertIsArray($result->adverts);
     }
 
@@ -55,7 +55,7 @@ class AdvTest extends TestCase
         $result = $this->Adv->advert(555);
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('advertId', $result);
+        $this->assertTrue(property_exists($result, 'advertId'));
         $this->assertIsArray($result->params);
     }
 
@@ -75,6 +75,8 @@ class AdvTest extends TestCase
 
     public function test_updateCpm()
     {
+        $this->markTestIncomplete("Переделать на новый метод");
+
         $result = $this->Adv->updateCpm(123456, AdvertType::ON_HOME_RECOM, 123456, 123456);
 
         $this->assertFalse($result);
@@ -140,9 +142,9 @@ class AdvTest extends TestCase
         $result = $this->Adv->Finances()->balance();
 
         $this->assertIsObject($result);
-        $this->assertObjectHasAttribute('balance', $result);
-        $this->assertObjectHasAttribute('net', $result);
-        $this->assertObjectHasAttribute('bonus', $result);
+        $this->assertTrue(property_exists($result, 'balance'));
+        $this->assertTrue(property_exists($result, 'net'));
+        $this->assertTrue(property_exists($result, 'bonus'));
     }
 
     public function test_payments()

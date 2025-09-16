@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use DateTime;
+use InvalidArgumentException;
+use Dakword\WBSeller\Enum\AdvertType;
+use Dakword\WBSeller\Enum\AdvertStatus;
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvAuto;
-use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchCatalog;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvFinance;
-use Dakword\WBSeller\Enum\AdvertType;
-use InvalidArgumentException;
+use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchCatalog;
 
 class Adv extends AbstractEndpoint
 {
@@ -92,12 +94,12 @@ class Adv extends AbstractEndpoint
     /**
      * Переименование кампании
      *
-     * @param type $advertId Идентификатор РК, у которой меняется название
-     * @param type $name     Новое название (максимум 100 символов)
+     * @param int $advertId Идентификатор РК, у которой меняется название
+     * @param string $name     Новое название (максимум 100 символов)
      *
      * @return bool
      */
-    public function renameAdvert($advertId, $name): bool
+    public function renameAdvert(int $advertId, string $name): bool
     {
         $this->postRequest('/adv/v0/rename', [
             'advertId' => $advertId,
@@ -245,6 +247,27 @@ class Adv extends AbstractEndpoint
     }
 
     /**
+     * Статистика кампаний V3
+     *
+     * Метод формирует статистику для кампаний независимо от типа.
+     * Максимальный период в запросе — 31 день.
+     * Для кампаний в статусах 7, 9 и 11.
+     * @link https://dev.wildberries.ru/openapi/promotion#tag/Statistika/paths/~1adv~1v3~1fullstats/get
+     *
+     * @param array $params $ids, $beginDate, $endDate
+     *
+     * @return array
+     */
+    public function statisticV3(array $ids, DateTime|string $beginDate, DateTime|string $endDate): array
+    {
+        return $this->getRequest('/adv/v3/fullstats', [
+            'ids'       => implode(',', $ids),
+            'beginDate' => $beginDate instanceof DateTime ? $beginDate->format('Y-m-d') : $beginDate,
+            'endDate'   => $endDate instanceof DateTime ? $endDate->format('Y-m-d') : $endDate,
+        ]);
+    }
+
+    /**
      * Статистика по ключевым фразам
      *
      * Возвращает статистику по ключевым фразам за каждый день, когда кампания была активна.
@@ -261,7 +284,7 @@ class Adv extends AbstractEndpoint
      */
     public function advertStatisticByKeywords(int $id, DateTime $dateFrom, DateTime $dateTo): array
     {
-        return $this->Adv->getRequest('/adv/v0/stats/keywords', [
+        return $this->getRequest('/adv/v0/stats/keywords', [
             'advert_id' => $id,
             'from' => $dateFrom->format('Y-m-d'),
             'to' => $dateTo->format('Y-m-d'),
