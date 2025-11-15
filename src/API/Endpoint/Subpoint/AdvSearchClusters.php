@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
 use DateTime;
-use InvalidArgumentException;
 use Dakword\WBSeller\API\Endpoint\Adv;
 
 class AdvSearchClusters
@@ -27,7 +26,7 @@ class AdvSearchClusters
 	 * @param DateTime $dateTo Конец периода
 	 * @param array<int, array<int, int>> $items Идентификаторы кампаний и товаров {advertId: int, nmId: int}
 	 *
-	 * @return array Статистика поисковых кластеров {"stats": [{
+	 * @return object Статистика поисковых кластеров {"stats": [{
 	 *     "advert_id": 1825035,
 	 *     "nm_id": 983512347,
 	 *     "stats": [
@@ -45,7 +44,7 @@ class AdvSearchClusters
 	 *     ]
 	 * }, ...]}
 	 */
-	public function normqueryStats(DateTime $dateFrom, DateTime $dateTo, array $items): array
+	public function normqueryStats(DateTime $dateFrom, DateTime $dateTo, array $items): object
 	{
 		return $this->Adv->postRequest('/adv/v0/normquery/stats', [
 			'dateFrom' => $dateFrom->format('Y-m-d'),
@@ -61,7 +60,7 @@ class AdvSearchClusters
 	 * @link https://dev.wildberries.ru/openapi/promotion/#tag/Poiskovye-klastery/paths/~1adv~1v0~1normquery~1get-bids/post
 	 *
 	 * @param array<int, array<int, int>> $items Идентификаторы кампаний и товаров {advertId: int, nmId: int}
-	 * @return array Список ставок поисковых кластеров {
+	 * @return object Список ставок поисковых кластеров {
 	 * "bids": [{
 	 *   "advert_id": 1825035,
 	 *   "bid": 700,
@@ -70,7 +69,7 @@ class AdvSearchClusters
 	 * }, ...]
 	 * }
 	 */
-	public function normqueryGetBids(array $items): array
+	public function normqueryGetBids(array $items): object
 	{
 		return $this->Adv->postRequest('/adv/v0/normquery/get-bids', ['items' => $items]);
 	}
@@ -128,7 +127,7 @@ class AdvSearchClusters
 	 *   "nm_id": 983512347
 	 * }, ...]
 	 * 
-	 * @return array {
+	 * @return object {
 	 * "items": [{
 	 *   "advert_id": 1825035,
 	 *   "nm_id": 983512347,
@@ -136,7 +135,7 @@ class AdvSearchClusters
 	 * }, ...]
 	 * }
 	 */
-	public function normqueryGetMinus(array $items): array
+	public function normqueryGetMinus(array $items): object
 	{
 		return $this->Adv->postRequest('/adv/v0/normquery/get-minus', ['items' => $items]) ?? [];
 	}
