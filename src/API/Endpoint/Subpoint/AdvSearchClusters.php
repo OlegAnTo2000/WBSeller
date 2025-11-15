@@ -46,11 +46,16 @@ class AdvSearchClusters
 	 */
 	public function normqueryStats(DateTime $dateFrom, DateTime $dateTo, array $items): object
 	{
-		return $this->Adv->postRequest('/adv/v0/normquery/stats', [
+		$body = [
 			'from'  => $dateFrom->format('Y-m-d'),
 			'to'    => $dateTo->format('Y-m-d'),
 			'items' => $items,
-		]);
+		];
+		$result = $this->Adv->postRequest('/adv/v0/normquery/stats', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
 	}
 
 	/**
@@ -71,7 +76,14 @@ class AdvSearchClusters
 	 */
 	public function normqueryGetBids(array $items): object
 	{
-		return $this->Adv->postRequest('/adv/v0/normquery/get-bids', ['items' => $items]);
+		$body = [
+			'items' => $items,
+		];
+		$result = $this->Adv->postRequest('/adv/v0/normquery/get-bids', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
 	}
 
 	/**
@@ -87,12 +99,18 @@ class AdvSearchClusters
 	 *   "bid": 1000
 	 * }, ...]
 	 * 
-	 * @return bool
+	 * @return object
 	 */
-	public function normquerySetBids(array $bids): bool
+	public function normquerySetBids(array $bids): object
 	{
-		$this->Adv->postRequest('/adv/v0/normquery/bids', ['bids' => $bids]);
-		return $this->Adv->responseCode() === 200;
+		$body = [
+			'bids' => $bids,
+		];
+		$result = $this->Adv->postRequest('/adv/v0/normquery/bids', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
 	}
 
 	/**
@@ -108,12 +126,18 @@ class AdvSearchClusters
 	 *   "bid": 1000
 	 * }, ...]}
 	 * 
-	 * @return bool
+	 * @return object
 	 */
-	public function normqueryDeleteBids(array $bids): bool
+	public function normqueryDeleteBids(array $bids): object
 	{
-		$this->Adv->deleteRequest('/adv/v0/normquery/bids', ['bids' => $bids]);
-		return $this->Adv->responseCode() === 200;
+		$body = [
+			'bids' => $bids,
+		];
+		$result = $this->Adv->deleteRequest('/adv/v0/normquery/bids', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
 	}
 
 	/**
@@ -137,7 +161,14 @@ class AdvSearchClusters
 	 */
 	public function normqueryGetMinus(array $items): object
 	{
-		return $this->Adv->postRequest('/adv/v0/normquery/get-minus', ['items' => $items]) ?? [];
+		$body = [
+			'items' => $items,
+		];
+		$result = $this->Adv->postRequest('/adv/v0/normquery/get-minus', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
 	}
 
 	/**
