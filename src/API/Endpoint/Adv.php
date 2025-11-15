@@ -12,6 +12,7 @@ use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvAuto;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvFinance;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchCatalog;
+use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchClusters;
 
 class Adv extends AbstractEndpoint
 {
@@ -43,6 +44,16 @@ class Adv extends AbstractEndpoint
     public function SearchCatalog(): AdvSearchCatalog
     {
         return new AdvSearchCatalog($this);
+    }
+
+    /**
+     * Сервисы для кластеров фраз в поиске
+     *
+     * @return AdvSearchClusters
+     */
+    public function SearchClusters(): AdvSearchClusters
+    {
+        return new AdvSearchClusters($this);
     }
 
     /**
@@ -177,10 +188,10 @@ class Adv extends AbstractEndpoint
     {
         $this->checkType($type, [AdvertType::ON_CARD, AdvertType::ON_SEARCH, AdvertType::ON_HOME_RECOM]);
         $this->postRequest('/adv/v0/cpm', [
-            'advertId' => $advertId,
-            'type' => $type,
-            'cpm' => $cpm,
-            'param' => $param,
+            'advertId'   => $advertId,
+            'type'       => $type,
+            'cpm'        => $cpm,
+            'param'      => $param,
             'instrument' => $instrument,
         ]);
         return $this->responseCode() == 200;
@@ -253,10 +264,6 @@ class Adv extends AbstractEndpoint
      * Максимальный период в запросе — 31 день.
      * Для кампаний в статусах 7, 9 и 11.
      * @link https://dev.wildberries.ru/openapi/promotion#tag/Statistika/paths/~1adv~1v3~1fullstats/get
-     *
-     * @param array $params $ids, $beginDate, $endDate
-     *
-     * @return array
      */
     public function statisticV3(array $ids, DateTime|string $beginDate, DateTime|string $endDate): array
     {
