@@ -47,9 +47,9 @@ class AdvSearchClusters
 	public function normqueryStats(DateTime $dateFrom, DateTime $dateTo, array $items): object
 	{
 		return $this->Adv->postRequest('/adv/v0/normquery/stats', [
-			'dateFrom' => $dateFrom->format('Y-m-d'),
-			'dateTo'   => $dateTo->format('Y-m-d'),
-			'items'    => $items,
+			'from'  => $dateFrom->format('Y-m-d'),
+			'to'    => $dateTo->format('Y-m-d'),
+			'items' => $items,
 		]);
 	}
 
