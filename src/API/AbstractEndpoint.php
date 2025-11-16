@@ -16,12 +16,18 @@ abstract class AbstractEndpoint
     private int $retryDelay = 0;
     private Client $Client;
 
-    public function __construct(string $baseUrl, string $key, ?string $proxy = null, ?string $locale = null)
+    public function __construct(string $baseUrl, string $key, ?string $proxy = null, ?string $locale = null, array $middlewares = [])
     {
-        $this->locale = $locale;
+        $this->locale = $locale ?? 'ru';
         $this->Client = new Client(rtrim($baseUrl, '/'), $key, $proxy);
         if (method_exists($this, 'middleware')) {
             $this->Client->addMiddleware($this->middleware());
+        }
+        foreach ($middlewares as $name => $middleware) {
+            if (is_callable($middleware)) {
+                $middlewareName = is_string($name) ? $name : '';
+                $this->Client->addMiddleware($middleware, $middlewareName);
+            }
         }
     }
 

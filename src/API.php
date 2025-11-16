@@ -33,6 +33,7 @@ class API
     private string $masterKey;
     private string $locale;
     private ?string $proxy = null;
+    private array $middlewares = [];
 
     /**
      * @param array $options [
@@ -61,7 +62,11 @@ class API
      *     'statistics' => '',
      *     'tariffs' => '',
      *   ],
-     *   'locale' => 'ru'
+     *   'locale' => 'ru',
+     *   'middlewares' => [
+     *     'middleware_name' => callable,
+     *     callable,
+     *   ]
      * ]
      */
     function __construct(array $options = [])
@@ -80,6 +85,10 @@ class API
                 }
             }
         }
+
+        if(isset($options['middlewares']) && is_array($options['middlewares'])) {
+            $this->middlewares = $options['middlewares'];
+        }
     }
 
     private function getKey($keyName): string
@@ -97,6 +106,21 @@ class API
     public function useProxy(string $proxyUrl)
     {
         $this->proxy = $proxyUrl;
+    }
+
+    /**
+     * Добавить middleware для всех endpoint
+     *
+     * @param callable $middleware Middleware функция
+     * @param string $name Имя middleware (опционально)
+     */
+    public function addMiddleware(callable $middleware, string $name = ''): void
+    {
+        if ($name !== '') {
+            $this->middlewares[$name] = $middleware;
+        } else {
+            $this->middlewares[] = $middleware;
+        }
     }
 
     public function getProxy()
@@ -124,82 +148,82 @@ class API
 
     public function Adv(): Adv
     {
-        return new Adv($this->apiUrls['adv'], $this->getKey('adv'), $this->proxy, $this->locale);
+        return new Adv($this->apiUrls['adv'], $this->getKey('adv'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Analytics(): Analytics
     {
-        return new Analytics($this->apiUrls['analytics'], $this->getKey('analytics'), $this->proxy, $this->locale);
+        return new Analytics($this->apiUrls['analytics'], $this->getKey('analytics'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Calendar(): Calendar
     {
-        return new Calendar($this->apiUrls['calendar'], $this->getKey('prices'), $this->proxy, $this->locale);
+        return new Calendar($this->apiUrls['calendar'], $this->getKey('prices'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Chat(): Chat
     {
-        return new Chat($this->apiUrls['chat'], $this->getKey('chat'), $this->proxy, $this->locale);
+        return new Chat($this->apiUrls['chat'], $this->getKey('chat'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Common(): Common
     {
-        return new Common($this->apiUrls['common'], $this->getKey('common'), $this->proxy, $this->locale);
+        return new Common($this->apiUrls['common'], $this->getKey('common'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Content(): Content
     {
-        return new Content($this->apiUrls['content'], $this->getKey('content'), $this->proxy, $this->locale);
+        return new Content($this->apiUrls['content'], $this->getKey('content'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Documents(): Documents
     {
-        return new Documents($this->apiUrls['documents'], $this->getKey('documents'), $this->proxy, $this->locale);
+        return new Documents($this->apiUrls['documents'], $this->getKey('documents'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Feedbacks(): Feedbacks
     {
-        return new Feedbacks($this->apiUrls['feedbacks'], $this->getKey('feedbacks'), $this->proxy, $this->locale);
+        return new Feedbacks($this->apiUrls['feedbacks'], $this->getKey('feedbacks'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Marketplace(): Marketplace
     {
-        return new Marketplace($this->apiUrls['marketplace'], $this->getKey('marketplace'), $this->proxy, $this->locale);
+        return new Marketplace($this->apiUrls['marketplace'], $this->getKey('marketplace'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Prices(): Prices
     {
-        return new Prices($this->apiUrls['prices'], $this->getKey('prices'), $this->proxy, $this->locale);
+        return new Prices($this->apiUrls['prices'], $this->getKey('prices'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Questions(): Questions
     {
-        return new Questions($this->apiUrls['questions'], $this->getKey('questions'), $this->proxy, $this->locale);
+        return new Questions($this->apiUrls['questions'], $this->getKey('questions'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Recommends(): Recommends
     {
-        return new Recommends($this->apiUrls['recommends'], $this->getKey('recommends'), $this->proxy, $this->locale);
+        return new Recommends($this->apiUrls['recommends'], $this->getKey('recommends'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Returns(): Returns
     {
-        return new Returns($this->apiUrls['returns'], $this->getKey('returns'), $this->proxy, $this->locale);
+        return new Returns($this->apiUrls['returns'], $this->getKey('returns'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Statistics(): Statistics
     {
-        return new Statistics($this->apiUrls['statistics'], $this->getKey('statistics'), $this->proxy, $this->locale);
+        return new Statistics($this->apiUrls['statistics'], $this->getKey('statistics'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Supplies(): Supplies
     {
-        return new Supplies($this->apiUrls['supplies'], $this->getKey('supplies'), $this->proxy, $this->locale);
+        return new Supplies($this->apiUrls['supplies'], $this->getKey('supplies'), $this->proxy, $this->locale, $this->middlewares);
     }
 
     public function Tariffs(): Tariffs
     {
-        return new Tariffs($this->apiUrls['tariffs'], $this->getKey('tariffs'), $this->proxy, $this->locale);
+        return new Tariffs($this->apiUrls['tariffs'], $this->getKey('tariffs'), $this->proxy, $this->locale, $this->middlewares);
     }
 
 }

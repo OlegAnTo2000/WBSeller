@@ -14,16 +14,6 @@ class Content extends AbstractEndpoint
 {
 
     /**
-     * Сервис для получения новостей с портала продавцов.
-     *
-     * @return News
-     */
-    public function News(): News
-    {
-        return new News($this);
-    }
-
-    /**
      * Сервис для работы с тегами КТ.
      * Теги предназначены для быстрого поиска КТ в вашем лк.
      *
