@@ -157,7 +157,7 @@ class Analytics extends AbstractEndpoint
      * @return object {
      *      data: {
      *          page: integer, isNextPage: bool,
-     *          groups: [objectj, object, ...]
+     *          groups: [object, object, ...]
      *      },
      *      error: bool, errorText: string, additionalErrors: [object, object, ...]
      * }
@@ -228,6 +228,52 @@ class Analytics extends AbstractEndpoint
             ],
             'timezone' => $timezone,
             'aggregationLevel' => $agregation,
+        ]);
+    }
+
+    /**
+     * Статистика карточек товаров за период
+     * 
+     * Можно получить отчёт максимум за последние 365 дней.
+     * 3 запроса в минуту.
+     * 
+     * @link https://dev.wildberries.ru/openapi/analytics/#tag/Voronka-prodazh/operation/postSalesFunnelProducts
+     */
+    public function salesFunnelProducts(
+        DateTime $selectedPeriodFrom,
+        DateTime $selectedPeriodTo,
+        DateTime $pastPeriodFrom,
+        DateTime $pastPeriodTo,
+        array $nmIds = [],
+        array $brandNames = [],
+        array $subjectIds = [],
+        array $tagIds = [],
+        string $skipDeletedNm = false,
+        string $orderByField = 'openCard',
+        string $orderByMode = 'desc',
+        int $limit = 1000,
+        int $offset = 0
+    ) {
+        return $this->postRequest('/api/analytics/v3/sales-funnel/products', [
+            'selectedPeriod' => [
+                'start' => $selectedPeriodFrom->format('Y-m-d'),
+                'end' => $selectedPeriodTo->format('Y-m-d'),
+            ],
+            'pastPeriod' => [
+                'start' => $pastPeriodFrom->format('Y-m-d'),
+                'end' => $pastPeriodTo->format('Y-m-d'),
+            ],
+            'nmIds'      => $nmIds,
+            'subjectIds' => $subjectIds,
+            'tagIds'     => $tagIds,
+            'brandNames' => $brandNames,
+            'skipDeletedNm' => $skipDeletedNm,
+            'orderBy' => [
+                'field' => $orderByField,
+                'mode' => $orderByMode,
+            ],
+            'limit' => $limit,
+            'offset' => $offset,
         ]);
     }
 
