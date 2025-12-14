@@ -239,7 +239,7 @@ class Analytics extends AbstractEndpoint
      * 
      * @link https://dev.wildberries.ru/openapi/analytics/#tag/Voronka-prodazh/operation/postSalesFunnelProducts
      */
-    public function salesFunnelProducts(
+    public function v3SalesFunnelProducts(
         DateTime $selectedPeriodFrom,
         DateTime $selectedPeriodTo,
         DateTime $pastPeriodFrom,
