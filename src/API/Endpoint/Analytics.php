@@ -248,7 +248,7 @@ class Analytics extends AbstractEndpoint
         array $brandNames = [],
         array $subjectIds = [],
         array $tagIds = [],
-        string $skipDeletedNm = false,
+        bool $skipDeletedNm = false,
         string $orderByField = 'openCard',
         string $orderByMode = 'desc',
         int $limit = 1000,
