@@ -16,10 +16,25 @@ abstract class AbstractEndpoint
     private int $retryDelay = 0;
     private Client $Client;
 
-    public function __construct(string $baseUrl, string $key, ?string $proxy = null, ?string $locale = null, array $middlewares = [])
-    {
+    public function __construct(
+        string $baseUrl, 
+        string $key, 
+        ?string $proxy = null, 
+        ?string $locale = null, 
+        array $middlewares = [],
+        array $listeners = []
+    ) {
         $this->locale = $locale ?? 'ru';
         $this->Client = new Client(rtrim($baseUrl, '/'), $key, $proxy);
+        foreach (($listeners['request'] ?? []) as $cb) {
+            $this->Client->onRequest($cb);
+        }
+        foreach (($listeners['response'] ?? []) as $cb) {
+            $this->Client->onResponse($cb);
+        }
+        foreach (($listeners['error'] ?? []) as $cb) {
+            $this->Client->onError($cb);
+        }
         if (method_exists($this, 'middleware')) {
             $this->Client->addMiddleware($this->middleware());
         }

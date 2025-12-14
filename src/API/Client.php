@@ -27,6 +27,12 @@ class Client
     private string $apiKey;
     private HttpClient $Client;
     private HandlerStack $stack;
+    /** @var array<int, callable> */
+    private array $onRequest = [];
+    /** @var array<int, callable> */
+    private array $onResponse = [];
+    /** @var array<int, callable> */
+    private array $onError = [];
 
     function __construct(string $baseUrl, string $apiKey, ?string $proxyUrl)
     {
@@ -44,6 +50,10 @@ class Client
         ]);
     }
 
+    public function onRequest(callable $cb): self { $this->onRequest[] = $cb; return $this; }
+    public function onResponse(callable $cb): self { $this->onResponse[] = $cb; return $this; }
+    public function onError(callable $cb): self { $this->onError[] = $cb; return $this; }
+
     public function addMiddleware(callable $middleware, string $name = ''): void
     {
         $this->stack->push($middleware, $name);
@@ -55,19 +65,34 @@ class Client
      */
     public function request(string $method, string $path, array $params = [], array $addonHeaders = [])
     {
-        $this->responseCode = 0;
-        $this->responsePhrase = null;
+        $this->responseCode    = 0;
+        $this->responsePhrase  = null;
         $this->responseHeaders = [];
-        $this->rawResponse = null;
-        $this->response = null;
+        $this->rawResponse     = null;
+        $this->response        = null;
+        $this->rateLimit       = 0;
+        $this->rateRemaining   = 0;
+        $this->rateReset       = 0;
+        $this->rateRetry       = 0;
+
+        $startedAt = microtime(true);
+        $requestId = bin2hex(random_bytes(8)); // request_id для корреляции запросов
 
         $defaultHeaders = [
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json',
+            'Accept'        => 'application/json',
+            'Content-Type'  => 'application/json',
             'Authorization' => $this->apiKey,
         ];
         $headers = array_merge($defaultHeaders, $addonHeaders);
         $url = $this->baseUrl . $path;
+
+        $this->emit($this->onRequest, [
+            'id'      => $requestId,
+            'method'  => strtoupper($method),
+            'url'     => $url,
+            'headers' => $this->maskHeaders($headers),   // лучше заранее замаскировать Authorization
+            'params'  => $params,                        // или null если не хочешь логировать
+        ]);
 
         try {
             switch (strtoupper($method)) {
@@ -120,50 +145,118 @@ class Client
             }
         } catch (RequestException | ClientException $exc) {
             if ($exc->hasResponse()) {
-                $jsonDecoded = json_decode($exc->getResponse()->getBody()->getContents());
+                $resp = $exc->getResponse();
+        
+                $this->responseCode    = $resp->getStatusCode();
+                $this->responsePhrase  = $resp->getReasonPhrase();
+                $this->responseHeaders = $resp->getHeaders();
+        
+                $this->rateLimit     = (int) $resp->getHeaderLine('X-RateLimit-Limit') ?: 0;
+                $this->rateRemaining = (int) $resp->getHeaderLine('X-RateLimit-Remaining') ?: 0;
+                $this->rateReset     = (int) $resp->getHeaderLine('X-RateLimit-Reset') ?: 0;
+                $this->rateRetry     = (int) $resp->getHeaderLine('X-RateLimit-Retry') ?: 0;
+        
+                $body = (string) $resp->getBody();
+                $this->rawResponse = $body;
+        
+                $jsonDecoded = json_decode($body);
                 if (!json_last_error()) {
-                    /*
-                      400 Bad Request
-                      403 Forbidden
-                      404 Not Found
-                      409 Conflict
-                      500 Internal Server Error
-                          {["code"] => "InternalServerError", ["message"] => "Внутренняя ошибка сервера"}
-                      ...
-                     */
+                    $this->response = $jsonDecoded;
+        
+                    $durationMs = (int)((microtime(true) - $startedAt) * 1000);
+                    $this->emit($this->onError, [
+                        'request_id'      => $requestId,
+                        'method'          => strtoupper($method),
+                        'url'             => $url,
+                        'status'          => $this->responseCode,
+                        'raw'             => $this->rawResponse,
+                        'duration_ms'     => $durationMs,
+                        'exception_class' => get_class($exc),
+                        'message'         => $exc->getMessage(),
+                    ]);
+
                     return $jsonDecoded;
                 }
+
+                // exception без response (timeout, DNS и т.п.)
+                $durationMs = (int)((microtime(true) - $startedAt) * 1000);
+                $this->emit($this->onError, [
+                    'request_id'      => $requestId,
+                    'method'          => strtoupper($method),
+                    'url'             => $url,
+                    'status'          => null,
+                    'raw'             => null,
+                    'duration_ms'     => $durationMs,
+                    'exception_class' => get_class($exc),
+                    'message'         => $exc->getMessage(),
+                ]);
+        
+                // если тело не JSON — оставим строкой в response (удобно для логов)
+                $this->response = $body;
             }
-            /*
-              401 Unauthorized
-              404 Not Found
-              429 Too Many Requests
-              0	cURL error 6: Could not resolve host
-              0	cURL error 28: Operation timed out after * milliseconds with 0 out of 0 bytes received
-              0	cURL error 56: OpenSSL SSL_read: Connection was reset, errno 10054
-              0	cURL error 60: SSL certificate problem: self signed certificate in certificate chain
-              ...
-             */
+        
             throw $exc;
         }
 
-        $this->responseCode = $response->getStatusCode();
-        $this->responsePhrase = $response->getReasonPhrase();
+        $this->responseCode    = $response->getStatusCode();
+        $this->responsePhrase  = $response->getReasonPhrase();
         $this->responseHeaders = $response->getHeaders();
 
-        $this->rateLimit = (int)$response->getHeaderLine('X-RateLimit-Limit') ?: 0;
-        $this->rateRemaining = (int)$response->getHeaderLine('X-RateLimit-Remaining') ?: 0;
-        $this->rateReset = (int)$response->getHeaderLine('X-RateLimit-Reset') ?: 0;
-        $this->rateRetry = (int)$response->getHeaderLine('X-RateLimit-Retry') ?: 0;
+        $this->rateLimit     = (int) $response->getHeaderLine('X-RateLimit-Limit') ?: 0;
+        $this->rateRemaining = (int) $response->getHeaderLine('X-RateLimit-Remaining') ?: 0;
+        $this->rateReset     = (int) $response->getHeaderLine('X-RateLimit-Reset') ?: 0;
+        $this->rateRetry     = (int) $response->getHeaderLine('X-RateLimit-Retry') ?: 0;
 
-        $responseContent = $response->getBody()->getContents();
+        $responseContent = (string) $response->getBody();
         $this->rawResponse = $responseContent;
 
         $jsonDecoded = json_decode($responseContent);
 
         $this->response = (json_last_error() ? $responseContent : $jsonDecoded);
 
+        $durationMs = (int)((microtime(true) - $startedAt) * 1000);
+        $this->emit($this->onResponse, [
+            'request_id'  => $requestId,
+            'method'      => strtoupper($method),
+            'url'         => $url,
+            'status'      => $this->responseCode,
+            'headers'     => $this->maskHeaders($this->responseHeaders),
+            'raw'         => $this->rawResponse,
+            'duration_ms' => $durationMs,
+        ]);
+
         return $this->response;
     }
 
+    private function emit(array $listeners, array $event): void
+    {
+        foreach ($listeners as $cb) {
+            try { $cb($event); } catch (\Throwable $e) { /* не ломаем запрос */ }
+        }
+    }
+
+    /**
+     * Маскирует чувствительные заголовки (Authorization и т.п.)
+     */
+    private function maskHeaders(array $headers): array
+    {
+        static $sensitive = [
+            'authorization',
+            'proxy-authorization',
+            'x-api-key',
+            'api-key',
+        ];
+
+        $masked = [];
+
+        foreach ($headers as $name => $values) {
+            if (in_array(strtolower($name), $sensitive, true)) {
+                $masked[$name] = ['***masked***'];
+            } else {
+                $masked[$name] = $values;
+            }
+        }
+
+        return $masked;
+    }
 }
