@@ -107,6 +107,9 @@ class AdvAuto
      * Установка минус-фраз для автоматической кампании
      *
      * Допускается 1 запрос в 6 секунд.
+     * 
+     * @deprecated Будет удален с 2026-01-15, вместо него используйте методы поисковых кластеров
+     * 
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Upravlenie-parametrami-avtomaticheskih-kampanij/paths/~1adv~1v1~1auto~1set-excluded/post
      *
      * @param int   $id       Идентификатор кампании

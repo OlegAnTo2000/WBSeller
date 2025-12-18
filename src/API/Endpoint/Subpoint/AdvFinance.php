@@ -25,8 +25,6 @@ class AdvFinance
      * Метод позволяет получать информацию о счёте, балансе и бонусах продавца.
      * Допускается 1 запрос в секунду.
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Finansy/paths/~1adv~1v1~1balance/get
-     *
-     * @return int Бюджет кампании, ₽
      */
     public function balance(): object
     {

@@ -11,6 +11,7 @@ use Dakword\WBSeller\Enum\AdvertStatus;
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvAuto;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvFinance;
+use Dakword\WBSeller\DTOs\AdvV2SeacatSaveAdResponseDTO;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchCatalog;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchClusters;
 
@@ -82,6 +83,77 @@ class Adv extends AbstractEndpoint
     }
 
     /**
+     * Информация о кампаниях
+     * 
+     * Метод возвращает информацию о рекламных кампаниях с единой или ручной ставкой по их статусам, типам оплаты и ID.
+     * Допускается 5 запросов в секунду.
+     * 
+     * Параметры в доке указаны как обязательные, но если не передавать, то будут возвращены все кампании.
+     * 
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Kampanii/paths/~1api~1advert~1v2~1adverts/get
+     *
+     * @param array $ids ID кампаний, максимум 50
+     * @param array $statuses Статусы кампаний
+     * -1 — удалена, процесс удаления будет завершён в течение 10 минут
+     * 4 — готова к запуску
+     * 7 — завершена
+     * 8 — отменена
+     * 9 — активна
+     * 11 — на паузе
+     * @param string $paymentType Тип оплаты cpc/cpm
+     *
+     * @return array
+     */
+    public function apiAdvertV2Adverts(
+        ?array $ids, 
+        ?array $statuses, 
+        ?string $paymentType
+    ) {
+        $data = [];
+        
+        if ($ids) $data['ids']                  = implode(',', $ids);
+        if ($statuses) $data['statuses']        = implode(',', $statuses);
+        if ($paymentType) $data['payment_type'] = $paymentType;
+
+        return $this->getRequest('/api/advert/v2/adverts', $data);
+    }
+
+    /**
+     * Минимальные ставки для карточек товаров
+     * Метод возвращает минимальные ставки для карточек товаров в копейках по типу оплаты и местам размещения.
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Sozdanie-kampanij/paths/~1api~1advert~1v1~1bids~1min/post
+     *
+     * @param int $advertId Идентификатор кампании
+     * @param array $nmIds Идентификаторы номенклатур товаров, максимум 100
+     * @param string $paymentType Тип оплаты cpc/cpm
+     * @param array $placementTypes Места размещения combined/search/recommendation
+     *
+     * @return array
+     */
+    public function apiAdvertV1BidsMin(
+        int $advertId,
+        array $nmIds,
+        string $paymentType, 
+        array $placementTypes,
+    ) {
+        if (empty($nmIds)) {
+            throw new InvalidArgumentException("Не переданы номенклатуры товаров");
+        }
+        if (count($nmIds) > 100) {
+            throw new InvalidArgumentException("Превышение максимального количества номенклатур в запросе: 100");
+        }
+        if (!in_array($paymentType, ['cpc', 'cpm'])) {
+            throw new InvalidArgumentException("Неизвестный тип оплаты: {$paymentType}");
+        }
+        return $this->postRequest('/api/advert/v1/bids/min', [
+            'advert_id'       => $advertId,
+            'nm_ids'          => $nmIds,
+            "payment_type"    => $paymentType,
+            "placement_types" => $placementTypes,
+        ]);
+    }
+
+    /**
      * Удаление кампании
      *
      * Метод позволяет удалять кампании в статусе 4 - готова к запуску.
@@ -100,6 +172,54 @@ class Adv extends AbstractEndpoint
             'id' => $id,
         ]);
         return $this->responseCode() == 200;
+    }
+
+    /**
+     * Создать кампанию
+     * 
+     * Метод создаёт кампанию:
+     * - с ручной ставкой для продвижения товаров в поиске и/или рекомендациях
+     * - с единой ставкой для продвижения товаров одновременно в поиске и рекомендациях
+     * 
+     * IMPORTANT: Максимум 5 запросов в минуту
+     * IMPORTANT: Места размещения указываются только для кампаний с ручной ставкой
+     * 
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Sozdanie-kampanij/paths/~1adv~1v2~1seacat~1save-ad/post
+     * 
+     * @param string $name Название кампании
+     * @param array $nms Номенклатуры для кампании, максимум 50
+     * @param string $bid_type Тип ставки: manual - ручная, unified - единая (по умолчанию: manual)
+     * @param string $payment_type Тип оплаты: cpc - за клик, cpm - за показ (по умолчанию: cpm)
+     * @param array $placement_types Места размещения: search - поиск, recommendations - рекомендации (только для кампании с ручной ставкой) (по умолчанию: ["search"])
+     * 
+     * @throws InvalidArgumentException Превышение максимального количества номенклатур в запросе
+     */
+    public function advV2SeacatSaveAd(
+        string $name, 
+        array $nms,
+        string $bid_type = 'manual', 
+        string $payment_type = 'cpm', 
+        array $placement_types = ["search"]
+    ) {
+        if (count($nms) > 50) {
+            throw new InvalidArgumentException("Превышение максимального количества номенклатур в запросе: 50");
+        }
+        if (!in_array($bid_type, ['manual', 'unified'])) {
+            throw new InvalidArgumentException("Неизвестный тип ставки: {$bid_type}");
+        }
+        if (!in_array($payment_type, ['cpc', 'cpm'])) {
+            throw new InvalidArgumentException("Неизвестный тип оплаты: {$payment_type}");
+        }
+        $data = [
+            'name'            => $name,
+            'nms'             => $nms,
+            'bid_type'        => $bid_type,
+            'payment_type'    => $payment_type
+        ];
+        if ($bid_type == 'manual') $data['placement_types'] = $placement_types;
+
+        $response = $this->postRequest('/adv/v2/seacat/save-ad', $data);
+        return AdvV2SeacatSaveAdResponseDTO::fromObject($response);
     }
 
     /**
@@ -152,11 +272,10 @@ class Adv extends AbstractEndpoint
 
     /**
      * Информация о кампаниях по списку их id
-     *
+     * 
+     * @deprecated Будет удален с 2026-02-02
      * @param array $ids Список ID кампаний. Максимум 50
-     *
      * @return array
-     *
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых кампаний
      */
     public function advertsInfoByIds(array $ids): array
@@ -173,6 +292,8 @@ class Adv extends AbstractEndpoint
      *
      * Доступно для РК в карточке товара, поиске или рекомендациях.
      *
+     * @deprecated Удален, вместо него 
+     * 
      * @param int $advertId   Идентификатор РК
      * @param int $type       Тип РК
      * @param int $cpm        Новое значение ставки
@@ -234,6 +355,115 @@ class Adv extends AbstractEndpoint
     {
         $this->getRequest('/adv/v0/stop', ['id' => $id]);
         return $this->responseCode() == 200;
+    }
+
+    /**
+     * Изменение ставок в кампаниях
+     * 
+     * Метод меняет ставки карточек товаров по артикулам WB в кампаниях с единой или ручной ставкой.
+     * Для кампаний в статусах 4, 9 и 11.
+     * 
+     * Допускается 5 запросов в секунду.
+     * 
+     * @param array $bids Массив ставок [{
+     *   "advert_id": 1825035,
+     *   "nm_bids": [{
+     *     "nm_id": 983512347,
+     *     "bid": 10000 (в копейках),
+     *     "placement": "combined" (место размещения combined/search/recommendations)
+     *   }, ...]
+     * }, ...]
+     * 
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Upravlenie-kampaniyami/paths/~1api~1advert~1v1~1bids/patch
+     */
+    public function apiAdvertV1Bids(
+        array $bids
+    ) {
+        if (empty($bids)) {
+            throw new InvalidArgumentException("Не переданы ставки");
+        }
+        if (count($bids) > 50) {
+            throw new InvalidArgumentException("Превышение максимального количества ставок в запросе: 50");
+        }
+        return $this->patchRequest('/api/advert/v1/bids', [
+            'bids' => $bids,
+        ]);
+    }
+
+    /**
+     * Изменение списка карточек товаров в кампании с единой ставкой
+     * Метод добавляет и удаляет карточки товаров в кампании с единой ставкой.
+     * 
+     * IMPORTANT: допускается 60 запросов в минуту
+     * IMPORTANT: работает только для кампаний с единой ставкой
+     * IMPORTANT: Проверки по параметру delete не предусмотрено
+     * 
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Parametry-kampanij/paths/~1adv~1v1~1auto~1updatenm/post
+     * @param int $id Идентификатор кампании
+     * @param array<int, int> $add Массив номенклатур товаров для добавления
+     * @param array<int, int> $delete Массив номенклатур товаров для удаления
+     */
+    public function advV1AutoUpdateNm(
+        int $id,
+        array $add,
+        array $delete,
+    ) {
+        return $this->postRequest('/adv/v1/auto/updatenm?id=' . $id, [
+            'add'    => $add,
+            'delete' => $delete,
+        ]);
+    }
+
+    /**
+     * Список карточек товаров для кампании с единой ставкой
+     * Метод формирует список карточек товаров, которые можно добавить в кампанию с единой ставкой.
+     * 
+     * IMPORTANT: Работает только для кампаний с единой ставкой
+     * IMPORTANT: Максимум 1 запрос в секунду
+     * 
+     * @param int $id Идентификатор кампании
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Parametry-kampanij/paths/~1adv~1v1~1auto~1getnmtoadd/get
+     */
+    public function advV1AutoGetNmToAdd(
+        int $id,
+    ) {
+        return $this->getRequest('/adv/v1/auto/getnmtoadd', ['id' => $id]);
+    }
+
+    /**
+     * Изменение мест размещения в кампаниях с ручной ставкой
+     * Метод меняет места размещения в кампаниях с ручной ставкой и моделью оплаты за показы — cpm.
+     * 
+     * IMPORTANT: работает только для кампаний с ручной ставкой
+     * IMPORTANT: работает только для кампаний с моделью оплаты cpm
+     * 
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Upravlenie-kampaniyami/paths/~1adv~1v0~1auction~1placements/put
+     * @param array $placements Массив мест размещения, максимум 50 [{
+     *   "advert_id": 1825035,
+     *   "placements": {
+     *     "search": true, (возможна отправка одного или двух значений, второе не поменяется) (true/false)
+     *     "recommendations": true (возможна отправка одного или двух значений, второе не поменяется) (true/false)
+     *   }
+     * }, ...]
+     * 
+     * @return bool
+     * 
+     * @throws InvalidArgumentException Не переданы места размещения
+     * @throws InvalidArgumentException Превышение максимального количества мест размещения в запросе
+     */
+    public function advV0AuctionPlacements(
+        array $placements
+    ) {
+        if (empty($placements)) {
+            throw new InvalidArgumentException("Не переданы места размещения");
+        }
+        if (count($placements) > 50) {
+            throw new InvalidArgumentException("Превышение максимального количества мест размещения в запросе: 50");
+        }
+        $this->putRequest('/adv/v0/auction/placements', [
+            'placements' => $placements,
+        ]);
+        return $this->responseCode() == 204;
     }
 
     /**
@@ -330,9 +560,9 @@ class Adv extends AbstractEndpoint
 
     /**
      * Конфигурационные значения
-     *
      * Возвращает информацию о допустимых значениях основных конфигурационных параметров кампаний.
      * Максимум 1 запрос в минуту
+     * @deprecated Будет удален с 2026-02-02
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Prodvizhenie/paths/~1adv~1v0~1config/get
      */
     public function config(): object
@@ -340,6 +570,14 @@ class Adv extends AbstractEndpoint
         return $this->getRequest('/adv/v0/config');
     }
 
+    /**
+     * Проверка типа РК
+     *
+     * @param int $type Тип РК
+     * @param array $types Типы РК
+     *
+     * @throws InvalidArgumentException Неизвестный тип РК
+     */
     private function checkType(int $type, array $types = [])
     {
         if (!in_array($type, $types ?: AdvertType::all())) {
