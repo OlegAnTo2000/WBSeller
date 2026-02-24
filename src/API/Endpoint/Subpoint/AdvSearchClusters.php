@@ -192,4 +192,34 @@ class AdvSearchClusters
 		]);
 		return $this->Adv->responseCode() === 200;
 	}
+
+	/**
+	 * Списки активных и неактивных поисковых кластеров
+	 *
+	 * Максимум 5 запросов в секунду
+	 * @link https://dev.wildberries.ru/docs/openapi/promotion#tag/Poiskovye-klastery/paths/~1adv~1v0~1normquery~1set-minus/post
+	 *
+	 * @param array $items Идентификаторы кампаний и товаров [{	
+	 *   "advert_id": 1825035,
+	 *   "nm_id": 983512347
+	 * }, ...]
+	 * 
+	 * @return object {
+	 * "items": [{
+	 *   "advert_id": 1825035,
+	 *   "nm_id": 983512347,
+	 *   "normQueries": ["active": ["Фраза 1"], "excluded": ["Фраза 2"]]
+	 * }, ...]
+	 * }
+	 */
+	public function normqueryList(array $items) : object {
+		$body = [
+			'items' => $items,
+		];
+		$result = $this->Adv->postRequest('/adv/v0/normquery/list', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
+	}
 }

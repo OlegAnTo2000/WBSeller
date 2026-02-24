@@ -423,10 +423,11 @@ class Adv extends AbstractEndpoint
      * 
      * @param int $id Идентификатор кампании
      * @link https://dev.wildberries.ru/openapi/promotion/#tag/Parametry-kampanij/paths/~1adv~1v1~1auto~1getnmtoadd/get
+     * @return array Список доступных номенклатур [123, 456, 789, ...]
      */
     public function advV1AutoGetNmToAdd(
         int $id,
-    ) {
+    ): array {
         return $this->getRequest('/adv/v1/auto/getnmtoadd', ['id' => $id]);
     }
 
