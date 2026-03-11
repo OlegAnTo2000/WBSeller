@@ -101,8 +101,6 @@ class Adv extends AbstractEndpoint
      * 9 — активна
      * 11 — на паузе
      * @param string $paymentType Тип оплаты cpc/cpm
-     *
-     * @return array
      */
     public function apiAdvertV2Adverts(
         ?array $ids, 
@@ -127,8 +125,6 @@ class Adv extends AbstractEndpoint
      * @param array $nmIds Идентификаторы номенклатур товаров, максимум 100
      * @param string $paymentType Тип оплаты cpc/cpm
      * @param array $placementTypes Места размещения combined/search/recommendation
-     *
-     * @return array
      */
     public function apiAdvertV1BidsMin(
         int $advertId,
