@@ -464,6 +464,23 @@ class Adv extends AbstractEndpoint
     }
 
     /**
+     * Рекомендуемые ставки для кампании
+     * 
+     * IMPORTANT: Работает только для CPM кампаний 
+     * IMPORTANT: Максимум 5 запросов в минуту
+     * 
+     * @param int $advertId Идентификатор кампании
+     * @param int $nmId Идентификатор номенклатуры товара
+     * @link https://dev.wildberries.ru/docs/openapi/promotion/#tag/Upravlenie-kampaniyami/paths/~1api~1advert~1v0~1bids~1recommendations/get
+     * @return array Список доступных номенклатур [123, 456, 789, ...]
+     */
+    public function apiAdvertV0BidsRecommendations(
+        int $advertId, int $nmId
+    ): array {
+        return $this->getRequest('/api/advert/v0/bids/recommendations', ['advertId' => $advertId, 'nmId' => $nmId]);
+    }
+
+    /**
      * Статистика кампаний
      *
      * Максимум 1 запрос в минуту.
