@@ -85,7 +85,8 @@ class API
      *   'middlewares' => [
      *     'middleware_name' => callable,
      *     callable,
-     *   ]
+     *   ],
+     *   'proxy' => 'http://122.123.123.123:8088',
      * ]
      */
     function __construct(array $options = [])
@@ -107,6 +108,10 @@ class API
 
         if (isset($options['middlewares']) && is_array($options['middlewares'])) {
             $this->middlewares = $options['middlewares'];
+        }
+
+        if (isset($options['proxy']) && is_string($options['proxy'])) {
+            $this->useProxy($options['proxy']);
         }
     }
 
@@ -144,10 +149,23 @@ class API
      * Использовать для запросов прокси
      *
      * @param string $proxyUrl http://username:password@192.168.16.1:10
+     * @return self
      */
-    public function useProxy(string $proxyUrl)
+    public function useProxy(string $proxyUrl): self
     {
         $this->proxy = $proxyUrl;
+        return $this;
+    }
+
+    /**
+     * Установить прокси URL, аналог useProxy()
+     *
+     * @param string|null $proxyUrl http://username:password@192.168.16.1:10
+     * @return self
+     */
+    public function setProxy(?string $proxyUrl): self
+    {
+        return $this->useProxy($proxyUrl);
     }
 
     /**
@@ -155,14 +173,16 @@ class API
      *
      * @param callable $middleware Middleware функция
      * @param string $name Имя middleware (опционально)
+     * @return self
      */
-    public function addMiddleware(callable $middleware, string $name = ''): void
+    public function addMiddleware(callable $middleware, string $name = ''): self
     {
         if ($name !== '') {
             $this->middlewares[$name] = $middleware;
         } else {
             $this->middlewares[] = $middleware;
         }
+        return $this;
     }
 
     public function getProxy()
@@ -170,9 +190,10 @@ class API
         return $this->proxy;
     }
 
-    public function setLocale(string $locale): void
+    public function setLocale(string $locale): self
     {
         $this->locale = $locale;
+        return $this;
     }
 
     public function getLocale(): string
@@ -180,12 +201,13 @@ class API
         return $this->locale;
     }
 
-    public function setApiUrl(string $apiName, string $apiUrl): void
+    public function setApiUrl(string $apiName, string $apiUrl): self
     {
         $arrayKey = strtolower($apiName);
         if (array_key_exists($arrayKey, $this->apiUrls)) {
             $this->apiUrls[$arrayKey] = rtrim($apiUrl, '/');
         }
+        return $this;
     }
 
     public function Adv(): Adv

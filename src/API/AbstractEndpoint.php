@@ -15,17 +15,19 @@ abstract class AbstractEndpoint
     private int $attempts = 1;
     private int $retryDelay = 0;
     private Client $Client;
+    private ?string $proxyUrl = null;
 
     public function __construct(
         string $baseUrl, 
         string $key, 
-        ?string $proxy = null, 
-        ?string $locale = null, 
-        array $middlewares = [],
-        array $listeners = []
+        ?string $proxy       = null,
+        ?string $locale      = null,
+        array   $middlewares = [],
+        array   $listeners   = []
     ) {
         $this->locale = $locale ?? 'ru';
-        $this->Client = new Client(rtrim($baseUrl, '/'), $key, $proxy);
+        $this->proxyUrl = $proxy;
+        $this->Client = new Client(rtrim($baseUrl, '/'), $key, $this->proxyUrl);
         foreach (($listeners['request'] ?? []) as $cb) {
             $this->Client->onRequest($cb);
         }
@@ -54,6 +56,29 @@ abstract class AbstractEndpoint
             return call_user_func_array([$this, $method], $parameters);
         }
         throw new InvalidArgumentException('Magic request methods not exists');
+    }
+
+    /**
+     * Установить прокси URL, заменяет его также в Client
+     *
+     * @param string|null $proxyUrl
+     * @return self
+     */
+    public function setProxyUrl(?string $proxyUrl): self
+    {
+        $this->proxyUrl = $proxyUrl;
+        $this->Client->setProxyUrl($proxyUrl);
+        return $this;
+    }
+
+    /**
+     * Получить прокси URL
+     *
+     * @return string|null
+     */
+    public function getProxyUrl(): ?string
+    {
+        return $this->proxyUrl;
     }
 
     /**
@@ -116,10 +141,10 @@ abstract class AbstractEndpoint
     public function responseRate(): array
     {
         return [
-            'limit' => $this->Client->rateLimit,
+            'limit'     => $this->Client->rateLimit,
             'remaining' => $this->Client->rateRemaining,
-            'reset' => $this->Client->rateReset,
-            'retry' => $this->Client->rateRetry,
+            'reset'     => $this->Client->rateReset,
+            'retry'     => $this->Client->rateRetry,
         ];
     }
 
@@ -165,7 +190,6 @@ abstract class AbstractEndpoint
             && mb_strpos(mb_strtolower($result->errorText), 'временные ограничения') !== false
         ) {
             throw new ApiTimeRestrictionsException($result->errorText);
-
         } elseif ($this->responseCode() == 401) {
             /*
              * "401 Unauthorized"

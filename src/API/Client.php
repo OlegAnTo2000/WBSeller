@@ -14,15 +14,19 @@ use InvalidArgumentException;
 
 class Client
 {
-    public int $responseCode = 0;
+    public int $responseCode       = 0;
     public ?string $responsePhrase = null;
-    public array $responseHeaders = [];
-    public ?string $rawResponse = null;
-    public $response = null;
-    public int $rateLimit = 0;
-    public int $rateRemaining = 0;
-    public int $rateReset = 0;
-    public int $rateRetry = 0;
+    public array $responseHeaders  = [];
+    public ?string $rawResponse    = null;
+    public $response               = null;
+    
+    public int $rateLimit          = 0;
+    public int $rateRemaining      = 0;
+    public int $rateReset          = 0;
+    public int $rateRetry          = 0;
+
+    public ?string $proxyUrl       = null;
+    
     private string $baseUrl;
     private string $apiKey;
     private HttpClient $Client;
@@ -34,19 +38,22 @@ class Client
     /** @var array<int, callable> */
     private array $onError = [];
 
-    function __construct(string $baseUrl, string $apiKey, ?string $proxyUrl)
-    {
-        $this->baseUrl = rtrim($baseUrl, '/');
-        $this->apiKey = $apiKey;
-
-        $this->stack = new HandlerStack();
+    function __construct(
+        string $baseUrl, 
+        string $apiKey, 
+        ?string $proxyUrl = null
+    ) {
+        $this->baseUrl  = rtrim($baseUrl, '/');
+        $this->apiKey   = $apiKey;
+        $this->proxyUrl = $proxyUrl;
+        $this->stack    = new HandlerStack();
         $this->stack->setHandler(new CurlHandler());
 
         $this->Client = new HttpClient([
-            'timeout' => 0, // in seconds
-            'verify' => false,
+            'timeout' => 0,              // in seconds
+            'verify'  => false,
             'handler' => $this->stack,
-            'proxy' => $proxyUrl,
+            'proxy'   => $this->proxyUrl,
         ]);
     }
 
@@ -63,8 +70,12 @@ class Client
      * @throws RequestException
      * @throws InvalidArgumentException
      */
-    public function request(string $method, string $path, array $params = [], array $addonHeaders = [])
-    {
+    public function request(
+        string $method, 
+        string $path, 
+        array $params = [], 
+        array $addonHeaders = []
+    ) {
         $this->responseCode    = 0;
         $this->responsePhrase  = null;
         $this->responseHeaders = [];
@@ -86,6 +97,9 @@ class Client
         $headers = array_merge($defaultHeaders, $addonHeaders);
         $url = $this->baseUrl . $path;
 
+        // Добавляем прокси в каждую отправку запроса, чтобы он учитывался даже если `$this->proxyUrl` меняется динамически.
+        $proxyOption = is_string($this->proxyUrl) && $this->proxyUrl !== '' ? ['proxy' => $this->proxyUrl] : [];
+
         $this->emit($this->onRequest, [
             'id'      => $requestId,
             'method'  => strtoupper($method),
@@ -100,35 +114,35 @@ class Client
                     $response = $this->Client->get($url, [
                         'headers' => $headers,
                         'query' => Query::build($params),
-                    ]);
+                    ] + $proxyOption);
                     break;
 
                 case 'POST':
                     $response = $this->Client->post($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
-                    ]);
+                    ] + $proxyOption);
                     break;
 
                 case 'PUT':
                     $response = $this->Client->put($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
-                    ]);
+                    ] + $proxyOption);
                     break;
 
                 case 'PATCH':
                     $response = $this->Client->patch($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
-                    ]);
+                    ] + $proxyOption);
                     break;
 
                 case 'DELETE':
                     $response = $this->Client->delete($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
-                    ]);
+                    ] + $proxyOption);
                     break;
 
                 case 'MULTIPART':
@@ -137,7 +151,7 @@ class Client
                             'Authorization' => $this->apiKey,
                             ], $addonHeaders),
                         'multipart' => $params,
-                    ]);
+                    ] + $proxyOption);
                     break;
 
                 default:
@@ -258,5 +272,18 @@ class Client
         }
 
         return $masked;
+    }
+
+    /**
+     * Установить прокси URL, будет использоваться в каждом запросе
+     * и Прокси в запросе должен "перебивать" прокси из конструктора HTTPClient
+     *
+     * @param string|null $proxyUrl
+     * @return self
+     */
+    public function setProxyUrl(?string $proxyUrl): self
+    {
+        $this->proxyUrl = $proxyUrl;
+        return $this;
     }
 }
