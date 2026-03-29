@@ -4,24 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller;
 
-use Dakword\WBSeller\API\Endpoint\{
-    Adv,
-    Analytics,
-    Calendar,
-    Chat,
-    Common,
-    Content,
-    Documents,
-    Feedbacks,
-    Marketplace,
-    Prices,
-    Questions,
-    Recommends,
-    Returns,
-    Statistics,
-    Supplies,
-    Tariffs
-};
+use Dakword\WBSeller\API\Endpoint\{ Adv, Analytics, Calendar, Chat, Common, Content, Documents, Feedbacks, Marketplace, Prices, Questions, Recommends, Returns, Statistics, Supplies, Tariffs };
+use Dakword\WBSeller\API\Endpoint\Test;
 
 class API
 {
@@ -395,6 +379,18 @@ class API
         return new Tariffs(
             $this->apiUrls['tariffs'],
             $this->getKey('tariffs'),
+            $this->proxy,
+            $this->locale,
+            $this->middlewares,
+            $this->listeners
+        );
+    }
+
+    public function Test(): Test
+    {
+        return new Test(
+            '',
+            $this->masterKey ?? '',
             $this->proxy,
             $this->locale,
             $this->middlewares,
