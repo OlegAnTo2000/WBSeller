@@ -59,6 +59,92 @@ class AdvSearchClusters
 	}
 
 	/**
+	 * Статистика поисковых кластеров с группировкой по дням
+	 *
+	 * Максимум 10 запросов в минуту
+	 * @link https://dev.wildberries.ru/openapi/promotion/#tag/Poiskovye-klastery/paths/~1adv~1v0~1normquery~1stats/post
+	 *
+	 * @param DateTime $dateFrom Начало периода
+	 * @param DateTime $dateTo Конец периода
+	 * @param array<int, array<int, int>> $items Идентификаторы кампаний и товаров, не более 100 {advertId: int, nmId: int}
+	 *
+	 * @return object Статистика поисковых кластеров {
+   *  "items": [
+   *    {
+   *      "advertId": 123456789,
+   *      "dailyStats": [
+   *        {
+   *          "date": "2026-01-27",
+   *          "stat": {
+   *            "atbs": 39,
+   *            "avgPos": 3.3,
+   *            "clicks": 75,
+   *            "cpc": 1.44,
+   *            "cpm": 562.5,
+   *            "ctr": 39.06,
+   *            "normQuery": "Поисковый кластер 0",
+   *            "orders": 9,
+   *            "shks": 5,
+   *            "spend": 108,
+   *            "views": 192
+   *          }
+   *        },
+   *        {
+   *          "date": "2026-01-27",
+   *          "stat": {
+   *            "atbs": 71,
+   *            "avgPos": 7.9,
+   *            "clicks": 56,
+   *            "cpc": 4.38,
+   *            "cpm": 1290.95,
+   *            "ctr": 29.47,
+   *            "normQuery": "румяна для лица vivienne sabo",
+   *            "orders": 2,
+   *            "shks": 44,
+   *            "spend": 245.28,
+   *            "views": 190
+   *          }
+   *        },
+   *        {
+   *          "date": "2026-01-27",
+   *          "stat": {
+   *            "atbs": 39,
+   *            "avgPos": 3.3,
+   *            "clicks": 75,
+   *            "cpc": 1.44,
+   *            "cpm": 562.5,
+   *            "ctr": 39.06,
+   *            "normQuery": "Поисковый кластер 2",
+   *            "orders": 9,
+   *            "shks": 345345,
+   *            "spend": 108,
+   *            "views": 192
+   *          }
+   *        }
+   *      ],
+   *      "nmId": 987654321
+   *    }
+   *  ]
+   *}
+	 */
+	public function normqueryStatsV1(
+		DateTime $dateFrom, 
+		DateTime $dateTo, 
+		array $items
+	): object {
+		$body = [
+			'from'  => $dateFrom->format('Y-m-d'),
+			'to'    => $dateTo->format('Y-m-d'),
+			'items' => $items,
+		];
+		$result = $this->Adv->postRequest('/adv/v1/normquery/stats', $body);
+		if (isset($result->status) && $result->status !== 200) {
+			$result->request_body = $body;
+		}
+		return $result ?? (object) [];
+	}
+
+	/**
 	 * Список ставок поисковых кластеров
 	 *
 	 * Максимум 5 запросов в секунду
