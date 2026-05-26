@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
-use DateTime;
 use Dakword\WBSeller\API\Endpoint\Adv;
+use DateTime;
+use InvalidArgumentException;
 
 class AdvSearchClusters
 {
@@ -132,6 +133,10 @@ class AdvSearchClusters
 		DateTime $dateTo, 
 		array $items
 	): object {
+		if (empty($items)) throw new InvalidArgumentException("Массив items не должен быть пустым");
+		if (count($items) > 100) throw new InvalidArgumentException("Превышено максимальное количество элементов в items: 100");
+		$interval = $dateFrom->diff($dateTo);
+		if ($interval->days > 30) throw new InvalidArgumentException("Интервал между датами не должен превышать 30 дней включительно");
 		$body = [
 			'from'  => $dateFrom->format('Y-m-d'),
 			'to'    => $dateTo->format('Y-m-d'),
