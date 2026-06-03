@@ -50,10 +50,11 @@ class Client
         $this->stack->setHandler(new CurlHandler());
 
         $this->Client = new HttpClient([
-            'timeout' => 0,              // in seconds
-            'verify'  => false,
-            'handler' => $this->stack,
-            'proxy'   => $this->proxyUrl,
+            'timeout'         => 60,                 // in seconds
+            'connect_timeout' => 15,
+            'verify'          => false,
+            'handler'         => $this->stack,
+            'proxy'           => $this->proxyUrl,
         ]);
     }
 
