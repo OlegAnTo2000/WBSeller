@@ -46,18 +46,35 @@ try {
     echo $exc->getMessage(); // Неверный формат токена
 }
 
+// Отображение
+echo $token->masked();        // eyJhb...s...' — безопасное отображение токена
+echo $token;                  // eyJhbGciOiJFUzI1NiIs... — полный токен
+
+// Срок действия
 echo $token->expireDate()->format('Y-m-d H:i:s'); // 2024-09-20 16:21:04
 echo $token->isExpired() ? 'Просроченный' : 'Действительный';
+echo $token->daysUntilExpiry();  // Через сколько полных дней истекает (отрицательное — уже истёк)
+echo $token->hoursUntilExpiry(); // То же в полных часах
+
+// Тип токена
+echo $token->tokenType();       // 1=Базовый, 2=Тестовый, 3=Персональный, 4=Сервисный
+echo $token->isBasic()    ? 'Базовый'      : '';
+echo $token->isTest()     ? 'Тестовый'     : '';
+echo $token->isPersonal() ? 'Персональный' : '';
+echo $token->isService()  ? 'Сервисный'    : '';
+echo $token->serviceId(); // ID сервиса для сервисного токена, иначе null
 echo $token->isReadOnly() ? 'Только чтение' : 'Чтение и запись';
-echo $token->isTest() ? 'Для тестовой среды' : 'Рабочий';
-echo $token->sellerId(); // 284034
+
+// Продавец
+echo $token->sellerId();   // 284034 (числовой ID продавца, если присутствует в токене)
 echo $token->sellerUUID(); // 123e4567-e89b-12d3-a456-426655440000
-echo $token->accessTo('marketplace') ? 'Yes' : 'No'; // Yes
-echo $token->accessTo('common') ? 'Yes' : 'No'; // Yes
-echo $token->accessTo('chat') ? 'Yes' : 'No'; // No
-echo implode(',', $token->accessList()); // 'Цены и скидки, Маркетплейс, Документы'
-echo implode(',', array_keys($token->accessList())); // '3, 4, 12' - Позиции бита
-echo $token; // eyJhbGciOiJFUzI1NiIs...
+
+// Доступ к категориям API
+echo $token->accessTo('marketplace') ? 'Yes' : 'No';            // проверка одной категории
+echo $token->hasAccess('marketplace', 'content') ? 'Yes' : 'No'; // проверка нескольких сразу
+echo implode(', ', $token->accessList());                         // 'Цены и скидки, Маркетплейс, Документы'
+echo implode(', ', array_keys($token->accessList()));             // '3, 4, 12' — позиции бита
+
 print_r($token->getPayload());
 ```
 

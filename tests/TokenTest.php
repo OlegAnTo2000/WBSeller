@@ -13,8 +13,9 @@ class TokenTest extends TestCase
         'exp'    => 1722882872,
         's'      => 1073741832,
         'sid'    => '22e91535-959d-4978-95d0-44c9f0d93d3c',
-        'oid'    => 3931956,
+        'acc'    => 1,
         't'      => false,
+        'oid'    => 3931956,
         'access' => [3 => 'Цены и скидки'],
     ];
 
@@ -53,7 +54,7 @@ class TokenTest extends TestCase
         $payload = $token->getPayload();
 
         $this->assertTrue(property_exists($payload, 'exp'));
-        $this->assertFalse(property_exists($payload, 'id'));
+        $this->assertTrue(property_exists($payload, 'acc'));
         $this->assertEquals($this->testToken['sid'], $token->sellerUUID());
     }
 
@@ -75,11 +76,85 @@ class TokenTest extends TestCase
         $this->assertTrue($token->isExpired());
     }
 
+    public function test_daysUntilExpiry()
+    {
+        $token = $this->APIToken();
+
+        $this->assertIsInt($token->daysUntilExpiry());
+        $this->assertLessThan(0, $token->daysUntilExpiry());
+    }
+
+    public function test_hoursUntilExpiry()
+    {
+        $token = $this->APIToken();
+
+        $this->assertIsInt($token->hoursUntilExpiry());
+        $this->assertLessThan(0, $token->hoursUntilExpiry());
+        $this->assertGreaterThanOrEqual($token->daysUntilExpiry() * 24, $token->hoursUntilExpiry());
+    }
+
+    public function test_masked()
+    {
+        $token = $this->APIToken();
+        $masked = $token->masked();
+
+        $this->assertStringContainsString('...', $masked);
+        $this->assertEquals(13, strlen($masked)); // 5 + 3 + 5
+    }
+
+    public function test_tokenType()
+    {
+        $token = $this->APIToken();
+
+        $this->assertEquals(APIToken::TYPE_BASIC, $token->tokenType());
+    }
+
+    public function test_isBasic()
+    {
+        $token = $this->APIToken();
+
+        $this->assertTrue($token->isBasic());
+    }
+
     public function test_isTest()
     {
         $token = $this->APIToken();
 
         $this->assertFalse($token->isTest());
+    }
+
+    public function test_isPersonal()
+    {
+        $token = $this->APIToken();
+
+        $this->assertFalse($token->isPersonal());
+    }
+
+    public function test_isService()
+    {
+        $token = $this->APIToken();
+
+        $this->assertFalse($token->isService());
+    }
+
+    public function test_serviceId()
+    {
+        $token = $this->APIToken();
+        $this->assertNull($token->serviceId());
+
+        $serviceToken = new APIToken(
+            base64_encode(json_encode(['alg' => 'ES256', 'typ' => 'JWT']))
+            . '.' . base64_encode(json_encode([
+                'exp' => 9999999999,
+                's'   => 0,
+                'sid' => '22e91535-959d-4978-95d0-44c9f0d93d3c',
+                'acc' => APIToken::TYPE_SERVICE,
+                't'   => false,
+                'for' => 'asid:42',
+            ]))
+            . '.hash'
+        );
+        $this->assertEquals('42', $serviceToken->serviceId());
     }
 
     public function test_isReadOnly()
@@ -118,5 +193,15 @@ class TokenTest extends TestCase
         $this->assertTrue($token->accessTo('common'));
         $this->assertFalse($token->accessTo('chat'));
         $this->assertFalse($token->accessTo('sex'));
+    }
+
+    public function test_hasAccess()
+    {
+        $token = $this->APIToken();
+
+        $this->assertTrue($token->hasAccess('prices'));
+        $this->assertTrue($token->hasAccess('prices', 'common'));
+        $this->assertFalse($token->hasAccess('prices', 'chat'));
+        $this->assertFalse($token->hasAccess('chat', 'content'));
     }
 }

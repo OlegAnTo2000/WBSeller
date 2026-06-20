@@ -9,39 +9,48 @@ use DateTime;
 
 class APIToken
 {
+    const TYPE_BASIC    = 1;
+    const TYPE_TEST     = 2;
+    const TYPE_PERSONAL = 3;
+    const TYPE_SERVICE  = 4;
+
     const BIT = [
-        1 => 'Контент',
-        2 => 'Аналитика',
-        3 => 'Цены и скидки',
-        4 => 'Маркетплейс',
-        5 => 'Статистика',
-        6 => 'Продвижение',
-        7 => 'Вопросы и отзывы',
-        8 => 'Рекомендации',
-        9 => 'Чат с покупателями',
+        1  => 'Контент',
+        2  => 'Аналитика',
+        3  => 'Цены и скидки',
+        4  => 'Маркетплейс',
+        5  => 'Статистика',
+        6  => 'Продвижение',
+        7  => 'Вопросы и отзывы',
+        8  => 'Рекомендации',
+        9  => 'Чат с покупателями',
         10 => 'Поставки',
         11 => 'Возвраты покупателями',
         12 => 'Документы',
+        13 => 'Финансы',
+        16 => 'Пользователи',
     ];
     const BIT_READONLY = 30;
 
     private array $apiFlagPosition = [
-        'common' => 0,
-        'tariffs' => 0,
-        'content' => 1,
-        'analytics' => 2,
-        'calendar' => 3,
-        'prices' => 3,
+        'common'      => 0,
+        'tariffs'     => 0,
+        'content'     => 1,
+        'analytics'   => 2,
+        'calendar'    => 3,
+        'prices'      => 3,
         'marketplace' => 4,
-        'statistics' => 5,
-        'adv' => 6,
-        'feedbacks' => 7,
-        'questions' => 7,
-        'recommends' => 8,
-        'chat' => 9,
-        'supplies' => 10,
-        'returns' => 11,
-        'documents' => 12,
+        'statistics'  => 5,
+        'adv'         => 6,
+        'feedbacks'   => 7,
+        'questions'   => 7,
+        'recommends'  => 8,
+        'chat'        => 9,
+        'supplies'    => 10,
+        'returns'     => 11,
+        'documents'   => 12,
+        'finances'    => 13,
+        'users'       => 16,
     ];
     private string $token;
     private ?object $payload;
@@ -60,7 +69,7 @@ class APIToken
             throw new WBSellerException('Неверный формат токена');
         }
 
-        foreach (['exp', 's', 'oid', 'sid', 't'] as $param) {
+        foreach (['exp', 's', 'sid', 'acc', 't'] as $param) {
             if (!property_exists($this->payload, $param)) {
                 throw new WBSellerException('Неверный формат токена');
             }
@@ -87,9 +96,53 @@ class APIToken
         return (new DateTime()) > $this->expireDate();
     }
 
+    public function daysUntilExpiry(): int
+    {
+        return (int) floor(($this->payload->exp - time()) / 86400);
+    }
+
+    public function hoursUntilExpiry(): int
+    {
+        return (int) floor(($this->payload->exp - time()) / 3600);
+    }
+
+    public function masked(): string
+    {
+        return substr($this->token, 0, 5) . '...' . substr($this->token, -5);
+    }
+
+    public function tokenType(): int
+    {
+        return $this->payload->acc;
+    }
+
+    public function isBasic(): bool
+    {
+        return $this->payload->acc === self::TYPE_BASIC;
+    }
+
     public function isTest(): bool
     {
-        return $this->payload->t;
+        return $this->payload->acc === self::TYPE_TEST;
+    }
+
+    public function isPersonal(): bool
+    {
+        return $this->payload->acc === self::TYPE_PERSONAL;
+    }
+
+    public function isService(): bool
+    {
+        return $this->payload->acc === self::TYPE_SERVICE;
+    }
+
+    public function serviceId(): ?string
+    {
+        if (!$this->isService()) {
+            return null;
+        }
+        $for = $this->payload->for ?? '';
+        return str_starts_with($for, 'asid:') ? substr($for, 5) : null;
     }
 
     public function isReadOnly(): bool
@@ -97,9 +150,9 @@ class APIToken
         return $this->isFlagSet(self::BIT_READONLY);
     }
 
-    public function sellerId(): int
+    public function sellerId(): ?int
     {
-        return $this->payload->oid;
+        return $this->payload->oid ?? null;
     }
 
     public function sellerUUID(): string
@@ -120,6 +173,16 @@ class APIToken
         }
         if ($position) {
             return $this->isFlagSet($position);
+        }
+        return true;
+    }
+
+    public function hasAccess(string ...$apiNames): bool
+    {
+        foreach ($apiNames as $apiName) {
+            if (!$this->accessTo($apiName)) {
+                return false;
+            }
         }
         return true;
     }
