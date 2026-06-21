@@ -12,19 +12,50 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Query;
 use InvalidArgumentException;
 
+/**
+ * HTTP-клиент для запросов к WildBerries API.
+ *
+ * Обёртка над GuzzleHttp с поддержкой:
+ *   - авторизации через заголовок `Authorization`
+ *   - прокси (динамически переопределяемый на уровне запроса)
+ *   - middleware-стека GuzzleHttp (HandlerStack)
+ *   - событий onRequest / onResponse / onError для логирования
+ *   - маскировки чувствительных заголовков в событиях
+ *   - чтения rate-limit заголовков WB (`X-RateLimit-*`)
+ *
+ * После каждого вызова `request()` публичные свойства содержат метаданные ответа.
+ * При HTTP-ошибке (4xx/5xx) Guzzle бросает исключение, но свойства (`responseCode`,
+ * `response`, `rawResponse`) всё равно заполняются из тела ошибочного ответа.
+ *
+ * Таймаут: 60 сек. на ответ, 15 сек. на соединение. SSL-верификация отключена.
+ *
+ * Подводный камень: экземпляр HttpClient создаётся один раз в конструкторе,
+ * но прокси передаётся в каждый запрос отдельно — поэтому смена `$proxyUrl`
+ * через `setProxyUrl()` работает немедленно для следующего запроса.
+ */
 class Client
 {
+    /** HTTP-статус последнего ответа (например 200, 429, 401). Сбрасывается в 0 перед каждым запросом. */
     public int $responseCode       = 0;
+    /** Текстовая фраза HTTP-статуса (например 'OK', 'Too Many Requests'). */
     public ?string $responsePhrase = null;
+    /** Заголовки ответа в виде массива ['Header-Name' => ['value']]. */
     public array $responseHeaders  = [];
+    /** Сырое тело ответа в виде строки (null до первого запроса). */
     public ?string $rawResponse    = null;
+    /** Декодированное тело ответа: object если ответ был JSON, string иначе. */
     public $response               = null;
-    
+
+    /** Лимит запросов в окне (X-RateLimit-Limit). 0 если заголовок отсутствует. */
     public int $rateLimit          = 0;
+    /** Оставшееся количество запросов в текущем окне (X-RateLimit-Remaining). */
     public int $rateRemaining      = 0;
+    /** Unix-timestamp сброса счётчика rate limit (X-RateLimit-Reset). */
     public int $rateReset          = 0;
+    /** Рекомендуемое время ожидания в секундах при превышении лимита (X-RateLimit-Retry). */
     public int $rateRetry          = 0;
 
+    /** Текущий прокси URL. Можно менять между запросами через setProxyUrl(). */
     public ?string $proxyUrl       = null;
     
     private string $baseUrl;
@@ -39,9 +70,10 @@ class Client
     private array $onError = [];
 
     function __construct(
-        string $baseUrl, 
-        string $apiKey, 
-        ?string $proxyUrl = null
+        string $baseUrl,
+        string $apiKey,
+        ?string $proxyUrl = null,
+        bool $verifySsl = true
     ) {
         $this->baseUrl  = rtrim($baseUrl, '/');
         $this->apiKey   = $apiKey;
@@ -50,9 +82,9 @@ class Client
         $this->stack->setHandler(new CurlHandler());
 
         $this->Client = new HttpClient([
-            'timeout'         => 60,                 // in seconds
+            'timeout'         => 60,
             'connect_timeout' => 15,
-            'verify'          => false,
+            'verify'          => $verifySsl,
             'handler'         => $this->stack,
             'proxy'           => $this->proxyUrl,
         ]);
@@ -68,13 +100,33 @@ class Client
     }
 
     /**
-     * @throws RequestException
-     * @throws InvalidArgumentException
+     * Выполняет HTTP-запрос к WB API.
+     *
+     * Поддерживаемые методы: GET, POST, PUT, PATCH, DELETE, MULTIPART.
+     * MULTIPART отправляется как POST с `multipart/form-data` (без JSON-обёртки).
+     *
+     * Перед запросом сбрасываются все публичные поля ответа.
+     * После запроса — заполняются кодом, заголовками, телом и rate-limit данными.
+     *
+     * При HTTP-ошибке: свойства заполняются из ответа ошибки, затем
+     * пробрасывается оригинальное Guzzle-исключение (не подавляется).
+     * Если тело ошибочного ответа — валидный JSON, он доступен через `$this->response`.
+     *
+     * Для GET-запросов параметры передаются в query string через Guzzle Query::build.
+     * Для остальных методов — сериализуются в JSON-тело.
+     *
+     * @param string $method      HTTP-метод (GET, POST, PUT, PATCH, DELETE, MULTIPART)
+     * @param string $path        Путь относительно baseUrl (например `/api/v3/orders`)
+     * @param array  $params      Параметры запроса (query для GET, body для остальных)
+     * @param array  $addonHeaders Дополнительные заголовки, мержатся с дефолтными
+     * @return mixed Декодированный JSON (object/array) или строка при не-JSON ответе
+     * @throws RequestException При сетевой ошибке или HTTP-ошибочном ответе
+     * @throws InvalidArgumentException При неподдерживаемом методе
      */
     public function request(
-        string $method, 
-        string $path, 
-        array $params = [], 
+        string $method,
+        string $path,
+        array $params = [],
         array $addonHeaders = []
     ) {
         $this->responseCode    = 0;
@@ -243,6 +295,12 @@ class Client
         return $this->response;
     }
 
+    /**
+     * Вызывает всех слушателей события, подавляя их исключения.
+     *
+     * Ошибки внутри callback не должны прерывать основной запрос,
+     * поэтому все Throwable перехватываются и молча игнорируются.
+     */
     private function emit(array $listeners, array $event): void
     {
         foreach ($listeners as $cb) {

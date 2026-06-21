@@ -14,6 +14,8 @@ use InvalidArgumentException;
 
 class Analytics extends AbstractEndpoint
 {
+    protected string $apiName = 'analytics';
+
     /**
      * Скрытые товары
      *

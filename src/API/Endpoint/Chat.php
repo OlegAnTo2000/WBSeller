@@ -8,6 +8,7 @@ use Dakword\WBSeller\API\AbstractEndpoint;
 
 class Chat extends AbstractEndpoint
 {
+    protected string $apiName = 'chat';
 
     /**
      * Список чатов

@@ -14,6 +14,7 @@ use InvalidArgumentException;
 
 class Marketplace extends AbstractEndpoint
 {
+    protected string $apiName = 'marketplace';
 
     /**
      * Методы используемые при кроссбордере

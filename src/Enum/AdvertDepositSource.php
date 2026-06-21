@@ -5,31 +5,32 @@ declare(strict_types=1);
 namespace Dakword\WBSeller\Enum;
 
 /**
- * Тип источника пополнения бюджета рекламной кампании
+ * Источник средств при пополнении бюджета рекламной кампании.
+ *
+ * Используется в методах пополнения бюджета (AdvFinance endpoint):
+ * ACCOUNT — основной счёт продавца,
+ * BALANCE — бонусный баланс WB,
+ * BONUSES — промо-бонусы.
+ *
+ * @see \Dakword\WBSeller\API\Endpoint\Subpoint\AdvFinance
  */
-class AdvertDepositSource
+enum AdvertDepositSource: int
 {
-    /**
-     * @var int Счет
-     */
-    const ACCOUNT = 0;
+    /** Основной счёт продавца. */
+    case ACCOUNT = 0;
+
+    /** Бонусный баланс WB. */
+    case BALANCE = 1;
+
+    /** Промо-бонусы. */
+    case BONUSES = 2;
 
     /**
-     * @var int Баланс
+     * @deprecated Используйте self::cases() или array_column(self::cases(), 'value').
+     * @return int[]
      */
-    const BALANCE = 1;
-
-    /**
-     * @var int Бонусы
-     */
-    const BONUSES = 2;
-
     public static function all(): array
     {
-        return [
-            self::ACCOUNT,
-            self::BALANCE,
-            self::BONUSES,
-        ];
+        return array_column(self::cases(), 'value');
     }
 }

@@ -9,6 +9,7 @@ use DateTime;
 
 class Tariffs extends AbstractEndpoint
 {
+    protected string $apiName = 'tariffs';
 
     /**
      * Комиссия по категориям товаров

@@ -49,7 +49,7 @@ class AdvAuto
             throw new InvalidArgumentException("Неизвестный тип списания: {$btype}");
         }
         return $this->Adv->postRequest('/adv/v1/save-ad', [
-            'type' => AdvertType::AUTO,
+            'type' => AdvertType::AUTO->value,
             'name' => mb_substr($name, 0, 128),
             'subjectId' => $subjectId,
             'sum' => $summa,

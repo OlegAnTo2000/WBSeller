@@ -9,6 +9,7 @@ use InvalidArgumentException;
 
 class Recommends extends AbstractEndpoint
 {
+    protected string $apiName = 'recommends';
 
     /**
      * Получение списка рекомендаций

@@ -11,6 +11,7 @@ use DateTime;
 
 class Feedbacks extends AbstractEndpoint
 {
+    protected string $apiName = 'feedbacks';
 
     /**
      * Сервис для работы с шаблонами ответов.

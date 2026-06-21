@@ -11,6 +11,7 @@ use InvalidArgumentException;
 
 class Questions extends AbstractEndpoint
 {
+    protected string $apiName = 'questions';
 
     /**
      * Сервис для работы с шаблонами ответов.

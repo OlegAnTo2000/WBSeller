@@ -10,6 +10,8 @@ use InvalidArgumentException;
 
 class Prices extends AbstractEndpoint
 {
+    protected string $apiName = 'prices';
+
     // /**
     //  * Сервис для работы с календарем акций
     //  *

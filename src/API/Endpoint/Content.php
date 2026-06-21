@@ -12,6 +12,7 @@ use InvalidArgumentException;
 
 class Content extends AbstractEndpoint
 {
+    protected string $apiName = 'content';
 
     /**
      * Сервис для работы с тегами КТ.

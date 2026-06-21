@@ -10,6 +10,7 @@ use Dakword\WBSeller\API\AbstractEndpoint;
 
 class Documents extends AbstractEndpoint
 {
+    protected string $apiName = 'documents';
 
     /**
      * Категории документов

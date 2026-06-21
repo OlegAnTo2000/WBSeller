@@ -11,6 +11,8 @@ use InvalidArgumentException;
  */
 class Supplies extends AbstractEndpoint
 {
+    protected string $apiName = 'supplies';
+
     /**
      * Коэффициенты приёмки
      *

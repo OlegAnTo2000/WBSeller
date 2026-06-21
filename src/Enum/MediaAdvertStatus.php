@@ -5,80 +5,57 @@ declare(strict_types=1);
 namespace Dakword\WBSeller\Enum;
 
 /**
- * Статус медиакампании
+ * Статус медиарекламной кампании WB (баннеры, видео и т.д.).
+ *
+ * Медиакампании проходят модерацию (DRAFT → MODERATION → ACCEPTED/REJECTED)
+ * перед началом показов, в отличие от обычных кампаний.
+ * Кампания может быть на паузе по трём причинам: вручную продавцом (PAUSED),
+ * по дневному лимиту (PAUSED_BY_LIMIT) или по исчерпанию бюджета (PAUSED_BY_BUDGET).
+ *
+ * @see AdvertStatus  Статусы обычных (поисковых/автоматических) кампаний
+ * @see \Dakword\WBSeller\API\Endpoint\Subpoint\AdvMedia
  */
-class MediaAdvertStatus
+enum MediaAdvertStatus: int
 {
-    /**
-     * @var int Черновик
-     */
-    const DRAFT = 1;
+    /** Черновик — кампания ещё не отправлена на модерацию. */
+    case DRAFT           = 1;
+
+    /** На модерации. */
+    case MODERATION      = 2;
+
+    /** Отклонена (с возможностью вернуть на модерацию). */
+    case REJECTED        = 3;
+
+    /** Одобрена модератором. */
+    case ACCEPTED        = 4;
+
+    /** Запланирована, показы ещё не начались. */
+    case PLANNED         = 5;
+
+    /** Идут показы. */
+    case PLAYED          = 6;
+
+    /** Кампания завершена. */
+    case COMPLETED       = 7;
+
+    /** Отказался (кампания отменена продавцом). */
+    case CANCELLED       = 8;
+
+    /** Приостановлена продавцом вручную. */
+    case PAUSED          = 9;
+
+    /** Автопауза по достижению дневного лимита бюджета. */
+    case PAUSED_BY_LIMIT  = 10;
+
+    /** Автопауза по полному расходу бюджета кампании. */
+    case PAUSED_BY_BUDGET = 11;
 
     /**
-     * @var int Модерация
+     * @deprecated Используйте self::cases() или array_column(self::cases(), 'value').
+     * @return int[]
      */
-    const MODERATION = 2;
-
-    /**
-     * @var int Отклонено (с возможностью вернуть на модерацию)
-     */
-    const REJECTED = 3;
-
-    /**
-     * @var int Одобрено
-     */
-    const ACCEPTED = 4;
-
-    /**
-     * @var int Запланировано
-     */
-    const PLANNED = 5;
-
-    /**
-     * @var int Идут показы
-     */
-    const PLAYED = 6;
-
-    /**
-     * @var int Завершено
-     */
-    const COMPLETED = 7;
-
-    /**
-     * @var int Отказался
-     */
-    const CANCELLED = 8;
-
-    /**
-     * @var int Приостановлено продавцом
-     */
-    const PAUSED = 9;
-
-    /**
-     * @var int Пауза по дневному лимиту
-     */
-    const PAUSED_BY_LIMIT = 10;
-
-    /**
-     * @var int Пауза по расходу бюджета
-     */
-    const PAUSED_BY_BUDGET = 11;
-
     public static function all(): array
     {
-        return [
-            self::DRAFT,
-            self::MODERATION,
-            self::REJECTED,
-            self::ACCEPTED,
-            self::PLANNED,
-            self::PLAYED,
-            self::COMPLETED,
-            self::CANCELLED,
-            self::PAUSED,
-            self::PAUSED_BY_LIMIT,
-            self::PAUSED_BY_BUDGET,
-        ];
+        return array_column(self::cases(), 'value');
     }
-
 }

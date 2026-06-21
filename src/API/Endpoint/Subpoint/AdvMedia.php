@@ -66,7 +66,7 @@ class AdvMedia
      */
     public function advertsList(int $status, int $type, int $page, int $limit, string $orderBy = 'create', string $orderDirection = 'desc'): array
     {
-        if (!in_array($status, MediaAdvertStatus::all())) {
+        if (MediaAdvertStatus::tryFrom($status) === null) {
             throw new InvalidArgumentException('Неизвестный статус медиакампании: ' . $status);
         }
         if (!in_array($type, [1, 2])) {

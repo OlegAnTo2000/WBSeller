@@ -9,6 +9,7 @@ use Dakword\WBSeller\API\Endpoint\Subpoint\News;
 
 class Common extends AbstractEndpoint
 {
+    protected string $apiName = 'common';
 
     /**
      * Сервис для получения новостей с портала продавцов.

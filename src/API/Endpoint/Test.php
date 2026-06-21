@@ -11,5 +11,5 @@ use Dakword\WBSeller\API\AbstractEndpoint;
  */
 class Test extends AbstractEndpoint
 {
-
+    // apiName = '' — валидация прав пропускается намеренно (тестовый endpoint)
 }

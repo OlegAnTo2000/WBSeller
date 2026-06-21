@@ -15,6 +15,8 @@ use InvalidArgumentException;
  */
 class Calendar extends AbstractEndpoint
 {
+    protected string $apiName = 'calendar';
+
     /**
      * Список акций
      *

@@ -17,6 +17,8 @@ use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchClusters;
 
 class Adv extends AbstractEndpoint
 {
+    protected string $apiName = 'adv';
+
     /**
      * Сервисы для автоматических кампаний
      *
@@ -251,7 +253,7 @@ class Adv extends AbstractEndpoint
      */
     public function advertsInfo(int $status, int $type, string $order = 'change', string $direction = 'desc'): array
     {
-        if (!in_array($status, AdvertStatus::all())) {
+        if (AdvertStatus::tryFrom($status) === null) {
             throw new InvalidArgumentException('Неизвестный статус РК: ' . $status);
         }
         $this->checkType($type);
@@ -303,7 +305,7 @@ class Adv extends AbstractEndpoint
      */
     public function updateCpm(int $advertId, int $type, int $cpm, int $param, int $instrument): bool
     {
-        $this->checkType($type, [AdvertType::ON_CARD, AdvertType::ON_SEARCH, AdvertType::ON_HOME_RECOM]);
+        $this->checkType($type, [AdvertType::ON_CARD->value, AdvertType::ON_SEARCH->value, AdvertType::ON_HOME_RECOM->value]);
         $this->postRequest('/adv/v0/cpm', [
             'advertId'   => $advertId,
             'type'       => $type,
@@ -593,7 +595,8 @@ class Adv extends AbstractEndpoint
      */
     private function checkType(int $type, array $types = [])
     {
-        if (!in_array($type, $types ?: AdvertType::all())) {
+        $validValues = $types ?: array_column(AdvertType::cases(), 'value');
+        if (!in_array($type, $validValues)) {
             throw new InvalidArgumentException('Неизвестный тип РК: ' . $type);
         }
     }

@@ -1,3 +1,92 @@
+### 5.0.0 - 21/06/2025
+
+#### ⚠ Breaking changes — требуется ревизия кода при обновлении
+
+**PHP минимум 8.1**
+* Минимальная версия PHP повышена с `^7.4 || ^8.0` до `^8.1`
+
+**Enum-классы переведены на PHP 8.1 `BackedEnum`**
+* `AdvertStatus`, `AdvertType`, `AdvertDepositSource`, `MediaAdvertStatus`, `ReturnAction`
+  переведены с `class` + `const` на нативный PHP 8.1 `enum`.
+* Константы теперь являются enum-кейсами. Чтобы получить скалярное значение, используйте `->value`:
+  ```php
+  // было
+  $type = AdvertType::AUTO;           // int 8
+  // стало
+  $type = AdvertType::AUTO->value;    // int 8
+  $case = AdvertType::AUTO;           // enum case AdvertType
+  ```
+* Константы `ReturnAction::ACTION_*` переименованы в `ReturnAction::*` (убран префикс `ACTION_`):
+  ```php
+  // было
+  ReturnAction::ACTION_APPROVE_CHECK
+  ReturnAction::ACTION_REJECT_CUSTOM
+  // стало
+  ReturnAction::APPROVE_CHECK
+  ReturnAction::REJECT_CUSTOM
+  ```
+  Старые имена `ACTION_*` сохранены как deprecated class-константы для обратной совместимости.
+* Метод `::all()` сохранён как deprecated и теперь возвращает `array_column(self::cases(), 'value')`.
+  Для получения enum-кейсов используйте встроенный `::cases()`.
+
+**SSL-верификация включена по умолчанию**
+* Ранее SSL-проверка сертификата была отключена глобально (`verify => false`).
+  Теперь включена по умолчанию (`verify => true`).
+* Если используется прокси с self-signed сертификатом — явно отключите:
+  ```php
+  new API(['ssl_verify' => false]);
+  // или
+  $api->setSslVerify(false);
+  ```
+
+**Retry по умолчанию: 3 попытки / 5 секунд**
+* Ранее при ответе `429 Too Many Requests` или `504 Gateway Timeout` исключение
+  бросалось немедленно (1 попытка, 0 мс задержки).
+* Теперь по умолчанию: 3 попытки с задержкой 5 000 мс между ними.
+* Скрипты с собственными таймаутами или тестами, рассчитывающими на мгновенный выброс
+  исключения при 429/504, должны явно переопределить параметры:
+  ```php
+  $api->Content()->retryOnTooManyRequests(attempts: 1, delay: 0)->cardsList(...);
+  ```
+  Или настроить нужное количество попыток:
+  ```php
+  $api->Content()->retryOnTooManyRequests(attempts: 5, delay: 3_000)->cardsList(...);
+  ```
+
+**Валидация токена при создании endpoint**
+* При вызове `$api->Content()` (и любого другого endpoint-метода) теперь выполняется
+  валидация токена, если он имеет JWT-формат (три части через точку):
+  * Истёкший токен → `ApiClientException` с кодом 401 до первого HTTP-запроса.
+  * Токен без прав на данный endpoint → `ApiClientException` с кодом 403.
+* Нестандартные (не JWT) ключи пропускаются без ошибки.
+* Если `try/catch` расставлен только вокруг API-методов, а не вокруг фабричных вызовов
+  — добавьте обёртку:
+  ```php
+  // безопасно
+  try {
+      $result = $api->Content()->cardsList(...);
+  } catch (ApiClientException $e) { ... }
+
+  // если объект создаётся отдельно — тоже оборачивайте
+  try {
+      $content = $api->Content();
+  } catch (ApiClientException $e) { ... }
+  ```
+
+#### Новое
+
+* `API::setSslVerify(bool)` — метод управления SSL-верификацией после создания объекта
+* `AbstractEndpoint::$apiName` — protected-свойство в каждом endpoint-классе для валидации прав токена
+* Полное PHPDoc-покрытие: классы `API`, `APIToken`, `Client`, `AbstractEndpoint`,
+  `DtoHelperTrait`, все исключения, все Enum-классы
+
+#### Внутренние улучшения (не влияют на API)
+
+* `goto` в retry-логике заменён на `while` + `continue`
+* SSL-верификация теперь конфигурируемая (а не глобально отключённая)
+
+---
+
 ### 4.31.3 - 05/03/2025
 * #13
 

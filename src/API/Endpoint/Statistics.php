@@ -10,6 +10,7 @@ use InvalidArgumentException;
 
 class Statistics extends AbstractEndpoint
 {
+    protected string $apiName = 'statistics';
 
     /**
      * Поставки

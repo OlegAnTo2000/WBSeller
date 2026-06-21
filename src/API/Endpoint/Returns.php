@@ -10,6 +10,7 @@ use InvalidArgumentException;
 
 class Returns extends AbstractEndpoint
 {
+    protected string $apiName = 'returns';
 
     /**
      * Заявки покупателей на возврат
@@ -46,8 +47,8 @@ class Returns extends AbstractEndpoint
      * Ответ на заявку покупателя
      *
      * @param string $id      UUID заявки
-     * @param string $action  Действие с заявкой Enum\ReturnAction::class
-     * @param string $comment Комментарий при Enum\ReturnAction::ACTION_REJECT_CUSTOM
+     * @param string $action  Действие с заявкой (значение ReturnAction enum, например ReturnAction::APPROVE_CHECK->value)
+     * @param string $comment Комментарий при ReturnAction::REJECT_CUSTOM->value
      *
      * @return bool true - успешно
      *
@@ -55,13 +56,13 @@ class Returns extends AbstractEndpoint
      */
     public function action(string $id, string $action, string $comment = ''): bool
     {
-        if (!in_array($action, ReturnAction::all())) {
+        if (ReturnAction::tryFrom($action) === null) {
             throw new InvalidArgumentException('Неизвестный ответ на заявку: ' . $action);
         }
         $this->patchRequest('/api/v1/claim', [
             'id' => $id,
             'action' => $action,
-        ] + ($action == ReturnAction::ACTION_REJECT_CUSTOM ? [
+        ] + ($action === ReturnAction::REJECT_CUSTOM->value ? [
             'comment' => $comment,
         ] : []));
         return $this->responseCode() == 200;

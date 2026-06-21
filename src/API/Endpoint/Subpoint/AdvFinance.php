@@ -69,7 +69,7 @@ class AdvFinance
         if ($summa < $minSumma) {
             throw new InvalidArgumentException('Минимальная сумма пополнения: ' . $minSumma);
         }
-        if (!in_array($depositSource, AdvertDepositSource::all())) {
+        if (AdvertDepositSource::tryFrom($depositSource) === null) {
             throw new InvalidArgumentException('Неизвестный тип источника пополнения: ' . $depositSource);
         }
         return $this->Adv->postRequest('/adv/v1/budget/deposit?id=' . $id, [

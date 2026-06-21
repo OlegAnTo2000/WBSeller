@@ -11,6 +11,36 @@ use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionProperty;
 
+/**
+ * Трейт для гидрации и сериализации DTO из/в данные WB API.
+ *
+ * Предоставляет универсальные методы преобразования:
+ *   - массив/JSON → DTO (`fromArray`, `fromResponse`)
+ *   - объект stdClass → DTO (`fromObject`)
+ *   - DTO → массив (`toArray`)
+ *
+ * Типизация основана на type-hint публичных свойств DTO через Reflection.
+ * Поддерживаются: скалярные типы, DateTime, BackedEnum, вложенные DTO (рекурсивно).
+ *
+ * Режимы гидрации:
+ *   - tolerant (по умолчанию): неизвестные поля API складываются в `$extra`,
+ *     отсутствующие поля DTO остаются незаполненными (null/default).
+ *   - strict: неизвестные поля бросают InvalidArgumentException.
+ *
+ * Чтобы использовать трейт, объявите его в DTO-классе:
+ * ```php
+ * class MyDTO {
+ *     use DtoHelperTrait;
+ *     public int $id;
+ *     public string $name;
+ *     public array $extra = []; // опционально: для неизвестных полей
+ * }
+ * $dto = MyDTO::fromArray($apiResponseArray);
+ * ```
+ *
+ * Подводный камень: union-типы (int|string) не поддерживаются в `castValue` —
+ * значение передаётся без кастинга. Используйте только именованные типы.
+ */
 trait DtoHelperTrait
 {
 
@@ -22,8 +52,18 @@ trait DtoHelperTrait
 	protected static string $extraProperty = 'extra';
 
 	/**
-	 * Создание DTO из decoded JSON / массива.
-	 * По умолчанию tolerant: неизвестные поля -> extra, missing fields -> null/дефолт.
+	 * Создаёт экземпляр DTO из ассоциативного массива (декодированный JSON).
+	 *
+	 * Перебирает публичные свойства DTO через Reflection и заполняет их значениями
+	 * из `$data`, применяя кастинг на основе type-hint каждого свойства.
+	 *
+	 * В tolerant-режиме (по умолчанию) неизвестные ключи из `$data` попадают
+	 * в свойство `$extra` (если оно объявлено в DTO). Это полезно, когда WB
+	 * добавляет новые поля в ответ — они не ломают гидрацию.
+	 *
+	 * @param array $data   Ассоциативный массив (обычно результат json_decode(..., true))
+	 * @param bool  $strict Если true, неизвестные поля бросают InvalidArgumentException
+	 * @throws \InvalidArgumentException В strict-режиме при наличии неизвестных полей
 	 */
 	public static function fromArray(array $data, bool $strict = false): static
 	{
@@ -58,7 +98,13 @@ trait DtoHelperTrait
 	}
 
 	/**
-	 * Создание DTO из ответа (массив или JSON-строка).
+	 * Создаёт DTO из ответа API (JSON-строка или уже декодированный массив).
+	 *
+	 * Удобная обёртка над `fromArray`: если передана строка — декодирует JSON,
+	 * если массив — делегирует напрямую. Используйте, когда тип ответа неизвестен.
+	 *
+	 * @param array|string $response JSON-строка или ассоциативный массив
+	 * @throws \InvalidArgumentException Если строка не является корректным JSON-массивом
 	 */
 	public static function fromResponse(array|string $response, bool $strict = false): static
 	{
@@ -74,8 +120,12 @@ trait DtoHelperTrait
 	}
 
 	/**
-	 * Сериализация DTO в массив для логов/отладки.
-	 * DateTime -> string (ATOM), Enum -> value.
+	 * Сериализует DTO в ассоциативный массив.
+	 *
+	 * Рекурсивно нормализует значения: DateTime → ISO 8601 строка,
+	 * BackedEnum → scalar value, вложенные DTO → массив через toArray().
+	 *
+	 * @param bool $includeExtra Включать ли поле `$extra` в результат (по умолчанию true)
 	 */
 	public function toArray(bool $includeExtra = true): array
 	{
@@ -97,7 +147,10 @@ trait DtoHelperTrait
 	}
 
 	/**
-	 * Удобный доступ к extra.
+	 * Возвращает значение из поля `$extra` по ключу.
+	 *
+	 * Поле `$extra` содержит неизвестные поля из ответа API (в tolerant-режиме).
+	 * Если свойство `$extra` не объявлено или ключ отсутствует — возвращает `$default`.
 	 */
 	public function extra(string $key, mixed $default = null): mixed
 	{
@@ -111,7 +164,11 @@ trait DtoHelperTrait
 	}
 
 	/**
-	 * Базовый кастинг на основании type-hint public-свойства.
+	 * Приводит значение к типу, объявленному в type-hint свойства DTO.
+	 *
+	 * Обрабатывает: int, float, bool, string, array, DateTimeImmutable, BackedEnum,
+	 * вложенные DTO (через castObjectType). Union/intersection типы — без кастинга.
+	 * null всегда возвращается как null (независимо от типа).
 	 */
 	protected static function castValue(ReflectionProperty $property, mixed $value): mixed
 	{
@@ -141,6 +198,14 @@ trait DtoHelperTrait
 		};
 	}
 
+	/**
+	 * Приводит значение к сложному типу: BackedEnum или вложенный DTO.
+	 *
+	 * Порядок проверок:
+	 *   1. BackedEnum — вызывает `::from()`, бросает UnexpectedValueException при неверном значении.
+	 *   2. Вложенный DTO — если тип имеет метод `fromArray` и значение является массивом.
+	 *   3. Всё остальное — возвращается без изменений (может быть stdClass, object и т.д.).
+	 */
 	protected static function castObjectType(string $typeName, mixed $value): mixed
 	{
 		// BackedEnum
@@ -165,6 +230,13 @@ trait DtoHelperTrait
 		return $value;
 	}
 
+	/**
+	 * Нестрогое приведение к bool.
+	 *
+	 * Распознаёт строковые значения: '1'/'true'/'yes'/'y'/'on' → true,
+	 * '0'/'false'/'no'/'n'/'off'/'' → false. Прочие строки — через (bool).
+	 * Числа: 0/0.0 → false, остальные → true.
+	 */
 	protected static function toBool(mixed $value): bool
 	{
 		if (is_bool($value)) return $value;
@@ -178,6 +250,13 @@ trait DtoHelperTrait
 		return (bool)$value;
 	}
 
+	/**
+	 * Приводит значение к DateTimeImmutable.
+	 *
+	 * WB обычно присылает ISO 8601 (например '2024-01-15T10:30:00+03:00').
+	 * Если строка не парсится — бросает UnexpectedValueException с оригинальным значением.
+	 * Принимает также DateTimeInterface (конвертирует) и уже готовый DateTimeImmutable.
+	 */
 	protected static function toDateTimeImmutable(mixed $value): ?DateTimeImmutable
 	{
 		if ($value instanceof DateTimeImmutable) {
