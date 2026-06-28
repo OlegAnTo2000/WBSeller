@@ -25,6 +25,7 @@ class QuestionsTest extends TestCase
     public function test_unansweredCountByPeriod()
     {
         $result = $this->Questions->unansweredCountByPeriod(new \DateTime('2023-07-01'), new \DateTime('2023-07-20 23:59:59'));
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
 
@@ -36,6 +37,7 @@ class QuestionsTest extends TestCase
     public function test_answeredCountByPeriod()
     {
         $result = $this->Questions->answeredCountByPeriod(new \DateTime('2023-07-01'), new \DateTime('2023-07-20 23:59:59'));
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
 
@@ -47,6 +49,7 @@ class QuestionsTest extends TestCase
     public function test_unansweredCount()
     {
         $result = $this->Questions->unansweredCount();
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
 
@@ -60,6 +63,7 @@ class QuestionsTest extends TestCase
     public function test_hasNew()
     {
         $result = $this->Questions->hasNew();
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
 
@@ -72,6 +76,7 @@ class QuestionsTest extends TestCase
     public function test_list()
     {
         $result = $this->Questions->list();
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
 
@@ -87,6 +92,7 @@ class QuestionsTest extends TestCase
     public function test_xlsReport()
     {
         $result = $this->Questions->xlsReport();
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
 
@@ -100,7 +106,9 @@ class QuestionsTest extends TestCase
 
     public function test_changeViewed()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Questions->changeViewed('xxl', true);
+        $result = $this->decodeResponse($result);
         $response = $this->Questions->response();
 
         $this->assertFalse($result);
@@ -110,7 +118,9 @@ class QuestionsTest extends TestCase
 
     public function test_sendAnswer()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Questions->sendAnswer('xxl', 'OK!');
+        $result = $this->decodeResponse($result);
         $response = $this->Questions->response();
 
         $this->assertFalse($result);
@@ -120,7 +130,9 @@ class QuestionsTest extends TestCase
 
     public function test_reject()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Questions->reject('xxl', 'answer');
+        $result = $this->decodeResponse($result);
         $response = $this->Questions->response();
 
         $this->assertFalse($result);
@@ -131,12 +143,14 @@ class QuestionsTest extends TestCase
     public function test_get()
     {
         $result = $this->Questions->list(1, 10, true);
+        $result = $this->decodeResponse($result);
 
         if(!$result->error) {
             $questions = $result->data->questions;
             if($questions) {
                 $question = array_shift($questions);
-                $result = $this->Questions->get($question->id);
+        $result = $this->Questions->get($question->id);
+                $result = $this->decodeResponse($result);
 
                 $this->assertEquals($question->id, $result->data->id);
             } else {

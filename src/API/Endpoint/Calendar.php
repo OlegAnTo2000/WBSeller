@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use DateTime;
 use InvalidArgumentException;
@@ -31,8 +33,7 @@ class Calendar extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества запрошенных акций
      */
-    public function promotions(DateTime $fromDate, DateTime $toDate, bool $allPromo = false, int $page = 1, int $limit = 1_000)
-    {
+    public function promotions(DateTime $fromDate, DateTime $toDate, bool $allPromo = false, int $page = 1, int $limit = 1_000): ApiResponse {
         $maxLimit = 1_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных акций: {$maxLimit}");
@@ -53,8 +54,7 @@ class Calendar extends AbstractEndpoint
      *
      * @param array $promotionIds ID акций
      */
-    public function promotionsDetails(array $promotionIds)
-    {
+    public function promotionsDetails(array $promotionIds): ApiResponse {
         return $this->getRequest('/api/v1/calendar/promotions/details', [
             'promotionIDs' => $promotionIds,
         ]);
@@ -74,8 +74,7 @@ class Calendar extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества запрошенных акций
      */
-    public function promotionNomenclatures(int $promotionId, bool $inAction = false, int $page = 1, int $limit = 1_000)
-    {
+    public function promotionNomenclatures(int $promotionId, bool $inAction = false, int $page = 1, int $limit = 1_000): ApiResponse {
         $maxLimit = 1_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных акций: {$maxLimit}");
@@ -104,8 +103,7 @@ class Calendar extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества переданных номенклатур
      */
-    public function promotionUpload(int $promotionId, array $nomenclatures, bool $uploadNow = false)
-    {
+    public function promotionUpload(int $promotionId, array $nomenclatures, bool $uploadNow = false): ApiResponse {
         $maxCount = 1_000;
         if (count($nomenclatures) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных номенклатур: {$maxCount}");

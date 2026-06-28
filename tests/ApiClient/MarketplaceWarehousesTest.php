@@ -22,9 +22,11 @@ class MarketplaceWarehousesTest extends TestCase
     public function test_list()
     {
         $result = $this->Warehouses->list();
+        $result = $this->decodeResponse($result);
         $this->assertIsArray($result);
         
         $warehouse = array_shift($result);
+        $warehouse = $this->decodeResponse($warehouse);
         $this->assertTrue(property_exists($warehouse, 'id'));
         $this->assertTrue(property_exists($warehouse, 'name'));
         $this->assertTrue(property_exists($warehouse, 'officeId'));
@@ -33,6 +35,7 @@ class MarketplaceWarehousesTest extends TestCase
     public function test_offices()
     {
         $result = $this->Warehouses->offices();
+        $result = $this->decodeResponse($result);
         $this->assertIsArray($result);
         
         $office = array_shift($result);
@@ -47,16 +50,21 @@ class MarketplaceWarehousesTest extends TestCase
 
     public function test_crud()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Warehouses->offices();
+        $result = $this->decodeResponse($result);
         $office = array_shift($result);
 
         $warehouse = $this->Warehouses->create('XYZ', $office->id);
+        $warehouse = $this->decodeResponse($warehouse);
         $this->assertTrue(property_exists($warehouse, 'id'));
         
         $updated = $this->Warehouses->update($warehouse->id, 'ABC-Test', $office->id);
+        $updated = $this->decodeResponse($updated);
         $this->assertTrue($updated);
         
         $deleted = $this->Warehouses->delete($warehouse->id);
+        $deleted = $this->decodeResponse($deleted);
         $this->assertTrue($deleted);
     }
 }

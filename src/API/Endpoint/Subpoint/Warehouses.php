@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Marketplace;
 
 class Warehouses
@@ -18,10 +20,9 @@ class Warehouses
     /**
      * Cписок складов продавца
      * 
-     * @return array [{id: int, name: string, officeId: int}, ...]
+     * @return ApiResponse
      */
-    public function list(): array
-    {
+    public function list(): ApiResponse {
         return $this->Marketplace->getRequest('/api/v3/warehouses');
     }
 
@@ -30,10 +31,9 @@ class Warehouses
      * 
      * Возвращает список всех складов WB для привязки к складам продавца
      * 
-     * @return array [{id: int, name: string, address: string, ...}, ...]
+     * @return ApiResponse
      */
-    public function offices(): array
-    {
+    public function offices(): ApiResponse {
         return $this->Marketplace->getRequest('/api/v3/offices');
     }
 
@@ -45,10 +45,9 @@ class Warehouses
      * @param string $name     Имя склада (до 200 символов)
      * @param int    $officeId ID склада WB к которому привязать
      * 
-     * @return object {id: int}
+     * @return ApiResponse
      */
-    public function create(string $name, int $officeId): object
-    {
+    public function create(string $name, int $officeId): ApiResponse {
         return $this->Marketplace->postRequest('/api/v3/warehouses', [
             'name' => mb_substr($name, 0, 200),
             'officeId' => $officeId,
@@ -65,15 +64,13 @@ class Warehouses
      * @param string $name     Имя склада (до 200 символов)
      * @param int    $officeId ID склада WB к которому привязать
      * 
-     * @return bool
+     * @return ApiResponse
      */
-    public function update(int $id, string $name, int $officeId): bool
-    {
-        $response = $this->Marketplace->putResponse('/api/v3/warehouses/' . $id, [
+    public function update(int $id, string $name, int $officeId): ApiResponse {
+        return $this->Marketplace->putRequest('/api/v3/warehouses/' . $id, [
             'name' => mb_substr($name, 0, 200),
             'officeId' => $officeId,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -81,12 +78,10 @@ class Warehouses
      * 
      * @param int    $id       ID склада продавца
      * 
-     * @return bool
+     * @return ApiResponse
      */
-    public function delete(int $id): bool
-    {
-        $response = $this->Marketplace->deleteResponse('/api/v3/warehouses/' . $id,);
-        return $response->statusCode === 204;
+    public function delete(int $id): ApiResponse {
+        return $this->Marketplace->deleteRequest('/api/v3/warehouses/' . $id,);
     }    
     
 }

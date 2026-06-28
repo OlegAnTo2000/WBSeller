@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Calendar;
 use InvalidArgumentException;
@@ -15,7 +17,7 @@ class Prices extends AbstractEndpoint
     // /**
     //  * Сервис для работы с календарем акций
     //  *
-    //  * @return Calendar
+    //  * @return ApiResponse
     //  */
     // public function Calendar(): Calendar
     // {
@@ -28,15 +30,14 @@ class Prices extends AbstractEndpoint
      * @param int $page   Номер страницы
      * @param int $onPage Количество результатов на странице
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {listGoods: [{nmId: int, vendorCode: string, sizes: array, currencyIsoCode4217: string, discount: int, editableSizePrice: bool}, ...]},
      *      error: bool, errorText: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального размера страницы
      */
-    public function getPrices(int $page = 1, int $onPage = 1_000): object
-    {
+    public function getPrices(int $page = 1, int $onPage = 1_000): ApiResponse {
         $maxLimit = 1_000;
         if ($onPage > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального размера страницы: {$maxLimit}");
@@ -52,13 +53,12 @@ class Prices extends AbstractEndpoint
      *
      * @param int $nmID Идентификатор номенклатуры
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {listGoods: [{nmId: int, vendorCode: string, sizes: array, currencyIsoCode4217: string, discount: int, editableSizePrice: bool}, ...]},
      *      error: bool, errorText: string
      * }
      */
-    public function getNmIdPrice(int $nmID): object
-    {
+    public function getNmIdPrice(int $nmID): ApiResponse {
         return $this->getRequest('/api/v2/list/goods/filter', [
             'offset'     => 0,
             'limit'      => 1_000,
@@ -76,13 +76,12 @@ class Prices extends AbstractEndpoint
      * @param int $page   Номер страницы
      * @param int $onPage Количество результатов на странице
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {listGoods: [{nmId: int, sizeID: int, vendorCode: string, price: int, currencyIsoCode4217: string, discountedPrice:int, discount: int, techSizeName: int, editableSizePrice: bool}, ...]},
      *      error: bool, errorText: string
      * }
      */
-    public function getNmIdSizesPrices(int $nmID, int $page = 1, int $onPage = 1_000): object
-    {
+    public function getNmIdSizesPrices(int $nmID, int $page = 1, int $onPage = 1_000): ApiResponse {
         return $this->getRequest('/api/v2/list/goods/size/nm', [
             'offset' => --$page * $onPage,
             'limit' => $onPage,
@@ -99,15 +98,14 @@ class Prices extends AbstractEndpoint
      * @param array $prices Товары, цены и скидки для них.
      *                      [{nmID: int, price: int, discount: int}, ...]
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {id: int, alreadyExists: bool}
      *      error: bool, errorText: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального количества переданных номенклатур
      */
-    public function upload(array $prices): object
-    {
+    public function upload(array $prices): ApiResponse {
         $maxCount = 1_000;
         if (count($prices) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных номенклатур: {$maxCount}");
@@ -127,15 +125,14 @@ class Prices extends AbstractEndpoint
      * @param array $prices Размеры и цены для них.
      *                      [{nmID: int, sizeID: int, price: int}, ...]
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {id: int, alreadyExists: bool}
      *      error: bool, errorText: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального количества переданных номенклатур
      */
-    public function uploadSizes(array $prices): object
-    {
+    public function uploadSizes(array $prices): ApiResponse {
         $maxCount = 1_000;
         if (count($prices) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных номенклатур: {$maxCount}");
@@ -150,10 +147,9 @@ class Prices extends AbstractEndpoint
      *
      * @param int $uploadId ID загрузки
      *
-     * @return object {data: object, error: bool, errorText: string}
+     * @return ApiResponse
      */
-    public function getUploadStatus(int $uploadId): object
-    {
+    public function getUploadStatus(int $uploadId): ApiResponse {
         return $this->getRequest('/api/v2/history/tasks', [
             'uploadID' => $uploadId,
         ]);
@@ -164,10 +160,9 @@ class Prices extends AbstractEndpoint
      *
      * @param int $uploadId ID загрузки
      *
-     * @return object {data: object, error: bool, errorText: string}
+     * @return ApiResponse
      */
-    public function getBufferUploadStatus(int $uploadId): object
-    {
+    public function getBufferUploadStatus(int $uploadId): ApiResponse {
         return $this->getRequest('/api/v2/buffer/tasks', [
             'uploadID' => $uploadId,
         ]);
@@ -182,12 +177,11 @@ class Prices extends AbstractEndpoint
      * @param int $page     Номер страницы
      * @param int $onPage   Количество результатов на странице (max 1000)
      *
-     * @return object {data: {uploadID: ?int, historyGoods: ?array}, error: bool, errorText: string}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального размера страницы
      */
-    public function getUpload(int $uploadId, int $page = 1, int $onPage = 1_000): object
-    {
+    public function getUpload(int $uploadId, int $page = 1, int $onPage = 1_000): ApiResponse {
         $maxLimit = 1_000;
         if ($onPage > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального размера страницы: {$maxLimit}");
@@ -208,12 +202,11 @@ class Prices extends AbstractEndpoint
      * @param int $page     Номер страницы
      * @param int $onPage   Количество результатов на странице
      *
-     * @return object {data: {uploadID: ?int, bufferGoods: ?array}, error: bool, errorText: string}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального размера страницы
      */
-    public function getBufferUpload(int $uploadId, int $page = 1, int $onPage = 1_000): object
-    {
+    public function getBufferUpload(int $uploadId, int $page = 1, int $onPage = 1_000): ApiResponse {
         $maxLimit = 1_000;
         if ($onPage > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального размера страницы: {$maxLimit}");
@@ -235,7 +228,7 @@ class Prices extends AbstractEndpoint
      * @param int $page     Номер страницы
      * @param int $onPage   Количество результатов на странице
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {
      *          quarantineGoods: [ object, ... ]
      *      }
@@ -244,8 +237,7 @@ class Prices extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального размера страницы
      */
-    public function quarantine(int $page = 1, int $onPage = 1_000): object
-    {
+    public function quarantine(int $page = 1, int $onPage = 1_000): ApiResponse {
         $maxLimit = 1_000;
         if ($onPage > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального размера страницы: {$maxLimit}");
@@ -265,15 +257,14 @@ class Prices extends AbstractEndpoint
      * @param array $discounts Товары и скидки для них.
      *                      [{nmID: int, clubDiscount: int}, ...]
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {id: int, alreadyExists: bool}
      *      error: bool, errorText: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального количества переданных номенклатур
      */
-    public function uploadClubDiscount(array $discounts): object
-    {
+    public function uploadClubDiscount(array $discounts): ApiResponse {
         $maxCount = 1_000;
         if (count($discounts) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных номенклатур: {$maxCount}");

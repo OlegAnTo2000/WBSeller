@@ -22,6 +22,7 @@ class AnaliticsWarehouseRemainsTest extends TestCase
     public function test_makeReport()
     {
         $result = $this->Analitics->WarehouseRemains()->makeReport([]);
+        $result = $this->decodeResponse($result);
 
         $this->assertIsString($result);
     }

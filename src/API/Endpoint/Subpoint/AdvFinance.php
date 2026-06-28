@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Adv;
 use Dakword\WBSeller\Enum\AdvertDepositSource;
 use Dakword\WBSeller\Enum\AdvertType;
@@ -26,8 +28,7 @@ class AdvFinance
      * Допускается 1 запрос в секунду.
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Finansy/paths/~1adv~1v1~1balance/get
      */
-    public function balance(): object
-    {
+    public function balance(): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/balance');
     }
 
@@ -40,12 +41,10 @@ class AdvFinance
      *
      * @param int $id Идентификатор кампании
      *
-     * @return int Бюджет кампании
+     * @return ApiResponse
      */
-    public function getAdvertBudget(int $id): int
-    {
-        return $this->Adv->getRequest('/adv/v1/budget', ['id' => $id])
-            ->total;
+    public function getAdvertBudget(int $id): ApiResponse {
+        return $this->Adv->getRequest('/adv/v1/budget', ['id' => $id]);
     }
 
     /**
@@ -58,13 +57,12 @@ class AdvFinance
      * @param int $summa         Сумма пополнения (min. 500 ₽)
      * @param int $depositSource Тип источника пополнения AdvertDepositSource
      *
-     * @return int Обновлённый размер бюджета кампании
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Минимальная сумма пополнения
      * @throws InvalidArgumentException Неизвестный тип источника пополнения
      */
-    public function depositAdvertBudget(int $id, int $summa, int $depositSource): int
-    {
+    public function depositAdvertBudget(int $id, int $summa, int $depositSource): ApiResponse {
         $minSumma = 500;
         if ($summa < $minSumma) {
             throw new InvalidArgumentException('Минимальная сумма пополнения: ' . $minSumma);
@@ -76,7 +74,7 @@ class AdvFinance
             'sum' => $summa,
             'type' => $depositSource,
             'return' => true,
-        ])->total;
+        ]);
     }
 
     /**
@@ -89,10 +87,9 @@ class AdvFinance
      * @param DateTime $dateFrom Начало интервала
      * @param DateTime $dateTo   Конец интервала
      *
-     * @return mixed
+     * @return ApiResponse
      */
-    public function payments(DateTime $dateFrom, DateTime $dateTo)
-    {
+    public function payments(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/payments', [
             'from' => $dateFrom->format('Y-m-d'),
             'to' => $dateTo->format('Y-m-d'),
@@ -109,10 +106,9 @@ class AdvFinance
      * @param DateTime $dateFrom Начало интервала
      * @param DateTime $dateTo   Конец интервала
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function costs(DateTime $dateFrom, DateTime $dateTo): array
-    {
+    public function costs(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/upd', [
             'from' => $dateFrom->format('Y-m-d'),
             'to' => $dateTo->format('Y-m-d'),

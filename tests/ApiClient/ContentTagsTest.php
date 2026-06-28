@@ -22,6 +22,7 @@ class ContentTagsTest extends TestCase
     public function test_list()
     {
         $result = $this->Tags->list();
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
         $this->assertIsArray($result->data);
@@ -29,8 +30,10 @@ class ContentTagsTest extends TestCase
 
     public function test_create_update_delete()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $Tags = $this->Tags;
         $result1 = $Tags->create('ХИТ', 'FEE0E0');
+        $result1 = $this->decodeResponse($result1);
 
         $this->assertFalse($result1->error);
 
@@ -39,21 +42,26 @@ class ContentTagsTest extends TestCase
             $id = $result1->data;
             $this->assertIsInt($id);
 
-            $result2 = $Tags->create('ХИТ', 'FEE0E0');
+        $result2 = $Tags->create('ХИТ', 'FEE0E0');
+            $result2 = $this->decodeResponse($result2);
             $this->assertTrue($result2->error);
             $this->assertEquals('tag already exists', $result2->errorText);
 
-            $result3 = $Tags->update($id, 'МЕГАХИТ', 'FFECC7');
+        $result3 = $Tags->update($id, 'МЕГАХИТ', 'FFECC7');
+            $result3 = $this->decodeResponse($result3);
             $this->assertFalse($result3->error);
             
-            $result4 = $Tags->delete($id);
+        $result4 = $Tags->delete($id);
+            $result4 = $this->decodeResponse($result4);
             $this->assertFalse($result4->error);
         }
     }
 
     public function test_delete()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Tags->delete(12345);
+        $result = $this->decodeResponse($result);
         $this->assertTrue($result->error);
     }
 

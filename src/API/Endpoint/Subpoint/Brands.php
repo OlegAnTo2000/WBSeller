@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Analytics;
 use DateTime;
 
@@ -25,12 +27,10 @@ class Brands
      * Максимум 1 запрос в минуту
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Dolya-brenda-v-prodazhah/paths/~1api~1v1~1analytics~1brand-share~1brands/get
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function getBrands(): array
-    {
-        $result = $this->Analytics->getRequest('/api/v1/analytics/brand-share/brands');
-        return $result->data;
+    public function getBrands(): ApiResponse {
+        return $this->Analytics->getRequest('/api/v1/analytics/brand-share/brands');
     }
 
     /**
@@ -44,17 +44,15 @@ class Brands
      * @param DateTime $dateFrom  Начало отчётного периода
      * @param DateTime $dateTo    Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function getBrandParentSubjects(string $brandName, DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->Analytics->getRequest('/api/v1/analytics/brand-share/parent-subjects', [
+    public function getBrandParentSubjects(string $brandName, DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->Analytics->getRequest('/api/v1/analytics/brand-share/parent-subjects', [
             'brand' => $brandName,
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
             'locale' => $this->Analytics->locale(),
         ]);
-        return $result->data;
     }
 
     /**
@@ -69,16 +67,14 @@ class Brands
      * @param DateTime $dateFrom  Начало отчётного периода
      * @param DateTime $dateTo    Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function getReport(string $brandName, int $parentId, DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->Analytics->getRequest('/api/v1/analytics/brand-share', [
+    public function getReport(string $brandName, int $parentId, DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->Analytics->getRequest('/api/v1/analytics/brand-share', [
             'brand' => $brandName,
             'parentId' => $parentId,
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->data;
     }
 }

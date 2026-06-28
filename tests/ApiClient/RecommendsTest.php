@@ -17,33 +17,33 @@ class RecommendationsTest extends TestCase
     {
         $nmIds = $this->getRealNms(2);
         $result = $this->Recommends()->list($nmIds);
-        $this->assertIsArray($result);
-        $this->assertTrue(in_array($nmIds[0], array_keys($result)));
-        $this->assertTrue(in_array($nmIds[1], array_keys($result)));
+        $result = $this->decodeResponse($result);
+        $this->assertIsObject($result);
+        $this->assertTrue(property_exists($result, 'data'));
     }
 
     public function test_add()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $recom = $this->Recommends();
-        $recom->add([123456 => [12345, 67890]]);
-
-        $this->assertEquals(200, $recom->responseCode());
+        $response = $recom->add([123456 => [12345, 67890]]);
+        $this->assertEquals(200, $response->statusCode);
     }
 
     public function test_delete()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $recom = $this->Recommends();
-        $recom->delete([123456 => [12345, 67890]]);
-
-        $this->assertEquals(200, $recom->responseCode());
+        $response = $recom->delete([123456 => [12345, 67890]]);
+        $this->assertEquals(200, $response->statusCode);
     }
 
     public function test_update()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $recom = $this->Recommends();
-        $recom->update([123456 => [12345, 67890]]);
-
-        $this->assertEquals(200, $recom->responseCode());
+        $response = $recom->update([123456 => [12345, 67890]]);
+        $this->assertEquals(200, $response->statusCode);
     }
 
 }

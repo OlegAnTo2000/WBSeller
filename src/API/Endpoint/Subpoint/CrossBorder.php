@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Marketplace;
 use InvalidArgumentException;
 
@@ -27,7 +29,7 @@ class CrossBorder
      *
      * @param array $orders Массив идентификаторов сборочных заданий
      *
-     * @return array [
+     * @return ApiResponse
      *     {
      *         orderID: int,
      *         url: string,
@@ -37,16 +39,14 @@ class CrossBorder
      *
      * @throws InvalidArgumentException Превышение максимального количества переданных сборочных заданий
      */
-    public function getOrdersStickers(array $orders): array
-    {
+    public function getOrdersStickers(array $orders): ApiResponse {
         $maxCount = 100;
         if (count($orders) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных сборочных заданий: {$maxCount}");
         }
         return $this->Marketplace->postRequest('/api/v3/files/orders/external-stickers', [
             'orders' => $orders,
-        ])
-        ->stickers;
+        ]);
     }
     /**
      * История статусов для сборочных заданий кроссбордера
@@ -56,27 +56,24 @@ class CrossBorder
      *
      * @param array $orders Массив идентификаторов сборочных заданий
      *
-     * @return array Сборочные задания
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException
      */
-    public function getOrdersStatusHistory(array $orders): array
-    {
+    public function getOrdersStatusHistory(array $orders): ApiResponse {
         $maxCount = 100;
         if (count($orders) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных сборочных заданий: {$maxCount}");
         }
         return $this->Marketplace->postRequest('/api/v3/orders/status/history', [
             'orders' => $orders,
-        ])
-        ->orders;
+        ]);
     }
 
     /**
      * Информация по клиенту
      */
-    public function getOrdersClient(array $orders)
-    {
+    public function getOrdersClient(array $orders): ApiResponse {
         return $this->Marketplace->DBS()->getOrdersClient($orders);
     }
 

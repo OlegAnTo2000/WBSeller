@@ -38,12 +38,20 @@ class ApiClientException extends WBSellerException
 
     public function responseBody(): mixed
     {
-        return $this->response?->body;
+        if ($this->response === null) {
+            return null;
+        }
+
+        try {
+            return $this->response->json();
+        } catch (ApiResponseDecodingException) {
+            return $this->response->text();
+        }
     }
 
     public function rawResponse(): ?string
     {
-        return $this->response?->rawBody;
+        return $this->response?->text();
     }
 
     public function responseHeaders(): array

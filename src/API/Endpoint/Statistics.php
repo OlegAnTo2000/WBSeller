@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use DateTime;
 use InvalidArgumentException;
@@ -20,10 +22,9 @@ class Statistics extends AbstractEndpoint
      *
      * @param DateTime $dateFrom Дата и время обновления информации в сервисе
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      */
-    public function incomes(DateTime $dateFrom): array
-    {
+    public function incomes(DateTime $dateFrom): ApiResponse {
         return $this->getRequest('/api/v1/supplier/incomes', [
             'dateFrom' => $dateFrom->format(DATE_RFC3339),
         ]);
@@ -39,10 +40,9 @@ class Statistics extends AbstractEndpoint
      *
      * @param DateTime $dateFrom Дата и время обновления информации в сервисе
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      */
-    public function stocks(DateTime $dateFrom): array
-    {
+    public function stocks(DateTime $dateFrom): ApiResponse {
         return $this->getRequest('/api/v1/supplier/stocks', [
             'dateFrom' => $dateFrom->format(DATE_RFC3339),
         ]);
@@ -58,10 +58,9 @@ class Statistics extends AbstractEndpoint
      *
      * @param DateTime $dateFrom Дата и время обновления информации в сервисе
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      */
-    public function ordersFromDate(DateTime $dateFrom): array
-    {
+    public function ordersFromDate(DateTime $dateFrom): ApiResponse {
         return $this->getRequest('/api/v1/supplier/orders', [
             'dateFrom' => $dateFrom->format(DATE_RFC3339),
             'flag' => 0,
@@ -75,10 +74,9 @@ class Statistics extends AbstractEndpoint
      *
      * @param DateTime $dateFrom Дата оформления заказа (время в дате значения не имеет)
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      */
-    public function ordersOnDate(DateTime $dateFrom): array
-    {
+    public function ordersOnDate(DateTime $dateFrom): ApiResponse {
         return $this->getRequest('/api/v1/supplier/orders', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'flag' => 1,
@@ -95,10 +93,9 @@ class Statistics extends AbstractEndpoint
      *
      * @param DateTime $dateFrom Дата и время обновления информации в сервисе
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      */
-    public function salesFromDate(DateTime $dateFrom): array
-    {
+    public function salesFromDate(DateTime $dateFrom): ApiResponse {
         return $this->getRequest('/api/v1/supplier/sales', [
             'dateFrom' => $dateFrom->format(DATE_RFC3339),
             'flag' => 0,
@@ -115,10 +112,9 @@ class Statistics extends AbstractEndpoint
      *
      * @param DateTime $dateFrom Дата и время обновления информации в сервисе
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      */
-    public function salesOnDate(DateTime $dateFrom): array
-    {
+    public function salesOnDate(DateTime $dateFrom): ApiResponse {
         return $this->getRequest('/api/v1/supplier/sales', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'flag' => 1,
@@ -140,12 +136,11 @@ class Statistics extends AbstractEndpoint
      *                           Для загрузки одного отчета может понадобиться вызывать API до тех пор,
      *                           пока количество возвращаемых строк не станет равным нулю.
      *
-     * @return array [ {object}, ... ]
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException
      */
-    public function detailReport(DateTime $dateFrom, DateTime $dateTo, int $limit, int $rrdId = 0)
-    {
+    public function detailReport(DateTime $dateFrom, DateTime $dateTo, int $limit, int $rrdId = 0): ApiResponse {
         $maxLimit = 100_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых строк отчета: {$maxLimit}");

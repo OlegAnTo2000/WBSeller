@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Adv;
 use Dakword\WBSeller\Enum\AdvertType;
 use DateTime;
@@ -34,13 +36,12 @@ class AdvAuto
      *                                                   Запуск кампании будет доступен через 3 минуты после создания кампании.
      *                                                   false - будет сразу запущена
      *
-     * @return string ID созданной кампании
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального количества номенклатур в запросе
      * @throws InvalidArgumentException Неизвестный тип списания
      */
-    public function createAdvert(string $name, int $subjectId, int $summa, int $btype, int $cpm, array $nmIds, bool $on_pause = true): string
-    {
+    public function createAdvert(string $name, int $subjectId, int $summa, int $btype, int $cpm, array $nmIds, bool $on_pause = true): ApiResponse {
         $maxNms = 100;
         if (count($nmIds) > $maxNms) {
             throw new InvalidArgumentException("Превышение максимального количества номенклатур в запросе: {$maxNms}");
@@ -69,10 +70,9 @@ class AdvAuto
      *
      * @param int $id Идентификатор кампании
      *
-     * @return array Список доступных номенклатур
+     * @return ApiResponse
      */
-    public function getAdvertNmsToAdd(int $id): array
-    {
+    public function getAdvertNmsToAdd(int $id): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/auto/getnmtoadd', ['id' => $id]);
     }
 
@@ -92,15 +92,13 @@ class AdvAuto
      * @param array $nmsToAdd    Номенклатуры, которые необходимо добавить
      * @param array $nmsToDelete Номенклатуры, которые необходимо удалить
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function updateAdvertNms(int $id, array $nmsToAdd, array $nmsToDelete): bool
-    {
-        $response = $this->Adv->getResponse('/adv/v1/auto/updatenm?id=' . $id, [
+    public function updateAdvertNms(int $id, array $nmsToAdd, array $nmsToDelete): ApiResponse {
+        return $this->Adv->getRequest('/adv/v1/auto/updatenm?id=' . $id, [
             'add' => $nmsToAdd,
             'delete' => $nmsToDelete,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -115,20 +113,18 @@ class AdvAuto
      * @param int   $id       Идентификатор кампании
      * @param array $excluded Список фраз (макс. 1000 шт.)
      *
-     * @return bool
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального количества минус-фраз в запросе
      */
-    public function setAdvertMinuses(int $id, array $excluded): bool
-    {
+    public function setAdvertMinuses(int $id, array $excluded): ApiResponse {
         $maxCount = 1_000;
         if (count($excluded) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества минус-фраз в запросе: {$maxCount}");
         }
-        $response = $this->Adv->postResponse('/adv/v1/auto/set-excluded?id=' . $id, [
+        return $this->Adv->postRequest('/adv/v1/auto/set-excluded?id=' . $id, [
             'excluded' => $excluded,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -139,10 +135,9 @@ class AdvAuto
      *
      * @param int   $id       Идентификатор кампании
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function deleteAdvertMinuses(int $id): bool
-    {
+    public function deleteAdvertMinuses(int $id): ApiResponse {
         return $this->setAdvertMinuses($id, []);
     }
 
@@ -161,10 +156,9 @@ class AdvAuto
      *
      * @param int $id Идентификатор кампании
      *
-     * @return object
+     * @return ApiResponse
      */
-    public function advertStatistic(int $id): object
-    {
+    public function advertStatistic(int $id): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/auto/stat', ['id' => $id]);
     }
 
@@ -180,10 +174,9 @@ class AdvAuto
      *
      * @param int $id Идентификатор кампании
      *
-     * @return object
+     * @return ApiResponse
      */
-    public function advertStatisticByWords(int $id): object
-    {
+    public function advertStatisticByWords(int $id): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/auto/stat-words', ['id' => $id]);
     }
 
@@ -200,10 +193,9 @@ class AdvAuto
      * @param DateTime $dateFrom Начало периода
      * @param DateTime $dateTo   Конец периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function advertStatisticByKeywords(int $id, DateTime $dateFrom, DateTime $dateTo): array
-    {
+    public function advertStatisticByKeywords(int $id, DateTime $dateFrom, DateTime $dateTo): ApiResponse {
         return $this->Adv->advertStatisticByKeywords($id, $dateFrom, $dateTo);
     }
 }

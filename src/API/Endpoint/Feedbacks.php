@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Templates;
 use InvalidArgumentException;
@@ -28,13 +30,12 @@ class Feedbacks extends AbstractEndpoint
      *
      * Метод отображает информацию о наличии у продавца непросмотренных отзывов и вопросов
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {hasNewQuestions: bool, hasNewFeedbacks: bool},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function hasNew(): object
-    {
+    public function hasNew(): ApiResponse {
         return $this->getRequest('/api/v1/new-feedbacks-questions');
     }
 
@@ -46,13 +47,12 @@ class Feedbacks extends AbstractEndpoint
      * @param DateTime|null $dateStart  Дата начала периода
      * @param DateTime|null $dateEnd    Дата конца периода
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {hasNewQuestions: bool, hasNewFeedbacks: bool},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function count(bool $isAnswered = false, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): object
-    {
+    public function count(bool $isAnswered = false, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): ApiResponse {
         return $this->getRequest('/api/v1/feedbacks/count', [
                 'isAnswered' => $isAnswered
             ]
@@ -67,13 +67,12 @@ class Feedbacks extends AbstractEndpoint
      * Метод позволяет получить количество необработанных отзывов за сегодня,
      * за всё время, и среднюю оценку всех отзывов
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {countUnanswered: int, countUnansweredToday: int, valuation: string},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function unansweredCount(): object
-    {
+    public function unansweredCount(): ApiResponse {
         return $this->getRequest('/api/v1/feedbacks/count-unanswered');
     }
 
@@ -90,7 +89,7 @@ class Feedbacks extends AbstractEndpoint
      * @param DateTime    $dateFrom   Дата начала периода
      * @param DateTime    $dateTo     Дата окончания периода
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {countUnanswered: int, countArchive: int, feedbacks: [object, ...]},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      *
@@ -99,8 +98,7 @@ class Feedbacks extends AbstractEndpoint
      */
     public function list(int $page = 1, int $onPage = 1_000, bool $isAnswered = false, int $nmId = 0, ?string $order = null,
         ?\DateTime $dateFrom = null, ?\DateTime $dateTo = null
-    ): object
-    {
+    ): ApiResponse {
         $maxCount = 1_000;
         if ($onPage > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных отзывов: {$maxCount}");
@@ -129,15 +127,14 @@ class Feedbacks extends AbstractEndpoint
      * @param int         $nmId   Идентификатор номенклатуры
      * @param string|null $order  Сортировка отзывов по дате "dateAsc" / "dateDesc"
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {feedbacks: [object, ...]},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      *
      * @throws InvalidArgumentException Превышение максимального количества запрошенных отзывов
      * @throws InvalidArgumentException Недопустимое значение для сортировки результатов
      */
-    public function archive(int $page = 1, int $onPage= 1_000, int $nmId = 0, ?string $order = null): object
-    {
+    public function archive(int $page = 1, int $onPage= 1_000, int $nmId = 0, ?string $order = null): ApiResponse {
         $maxCount = 1_000;
         if ($onPage > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных отзывов: {$maxCount}");
@@ -162,12 +159,11 @@ class Feedbacks extends AbstractEndpoint
      * @param bool        $isAnswered           Обработанные отзывы (true) или необработанные отзывы (false)
      * @param int         $page                 Номер страницы
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {filename: string, contentType: string, file: base64},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      */
-    public function xlsReport(bool $isAnswered = false,int $page = 1): object
-    {
+    public function xlsReport(bool $isAnswered = false,int $page = 1): ApiResponse {
         return $this->getRequest('/api/v1/feedbacks/report', [
                 'isAnswered' => $isAnswered,
                 'skip' => --$page * 5_000,
@@ -180,15 +176,13 @@ class Feedbacks extends AbstractEndpoint
      * @param string $id         Идентификатор отзыва
      * @param string $answerText Текст ответа
      *
-     * @return bool true - успешно, false - неудача
+     * @return ApiResponse
      */
-    public function sendAnswer(string $id, string $answerText): bool
-    {
-        $response = $this->postResponse('/api/v1/feedbacks/answer', [
+    public function sendAnswer(string $id, string $answerText): ApiResponse {
+        return $this->postRequest('/api/v1/feedbacks/answer', [
             'id' => $id,
             'text' => $answerText,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -197,15 +191,13 @@ class Feedbacks extends AbstractEndpoint
      * @param string $id         Идентификатор отзыва
      * @param string $answerText Текст ответа
      *
-     * @return bool true - успешно, false - неудача
+     * @return ApiResponse
      */
-    public function updateAnswer(string $id, string $answerText): bool
-    {
-        $response = $this->patchResponse('/api/v1/feedbacks/answer', [
+    public function updateAnswer(string $id, string $answerText): ApiResponse {
+        return $this->patchRequest('/api/v1/feedbacks/answer', [
             'id' => $id,
             'text' => $answerText,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -213,13 +205,12 @@ class Feedbacks extends AbstractEndpoint
      *
      * @param string $id Идентификатор отзыва
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: object,
      * 	    error: bool, errorText: string, additionalErrors: any
      * }
      */
-    public function get(string $id): object
-    {
+    public function get(string $id): ApiResponse {
         return $this->getRequest('/api/v1/feedback', [
             'id' => $id,
         ]);
@@ -228,13 +219,12 @@ class Feedbacks extends AbstractEndpoint
     /**
      * Получить список оценок
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {feedbackValuations: object, productValuations: object},
      * 	    error: bool, errorText: string, additionalErrors: any
      * }
      */
-    public function ratesList(): object
-    {
+    public function ratesList(): ApiResponse {
         return $this->getRequest('/api/v1/supplier-valuations', [], [
             'X-Locale' => getenv('WBSELLER_LOCALE')?:'ru'
         ]);
@@ -247,15 +237,13 @@ class Feedbacks extends AbstractEndpoint
      * @param string $id             Причина жалобы на отзыв
      * @param int    $feedbackRateId Оценка отзыва
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function rateFeedback(string $id, int $feedbackRateId): bool
-    {
-        $response = $this->postResponse('/api/v1/feedbacks/actions', [
+    public function rateFeedback(string $id, int $feedbackRateId): ApiResponse {
+        return $this->postRequest('/api/v1/feedbacks/actions', [
             'id' => $id,
             'supplierFeedbackValuation' => $feedbackRateId,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -265,15 +253,13 @@ class Feedbacks extends AbstractEndpoint
      * @param string $id            Идентификатор отзыва
      * @param int    $productRateId Причина жалобы на отзыв
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function rateProduct(string $id, int $productRateId): bool
-    {
-        $response = $this->postResponse('/api/v1/feedbacks/actions', [
+    public function rateProduct(string $id, int $productRateId): ApiResponse {
+        return $this->postRequest('/api/v1/feedbacks/actions', [
             'id' => $id,
             'supplierProductValuation' => $productRateId,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -284,16 +270,14 @@ class Feedbacks extends AbstractEndpoint
      * @param int    $feedbackRateId Причина жалобы на отзыв
      * @param int    $productRateId  Описание проблемы товара
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function rate(string $id, int $feedbackRateId, int $productRateId): bool
-    {
-        $response = $this->postResponse('/api/v1/feedbacks/actions', [
+    public function rate(string $id, int $feedbackRateId, int $productRateId): ApiResponse {
+        return $this->postRequest('/api/v1/feedbacks/actions', [
             'id' => $id,
             'supplierFeedbackValuation' => $feedbackRateId,
             'supplierProductValuation' => $productRateId,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -305,14 +289,12 @@ class Feedbacks extends AbstractEndpoint
      *
      * @param string $id Идентификатор отзыва
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function orderReturn(string $id): bool
-    {
-        $response = $this->postResponse('/api/v1/feedbacks/order/return', [
+    public function orderReturn(string $id): ApiResponse {
+        return $this->postRequest('/api/v1/feedbacks/order/return', [
             'feedbackId' => $id,
         ]);
-        return $response->statusCode === 200;
     }
 
     private function checkOrder($order)

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\Enum\ReturnAction;
 use InvalidArgumentException;
@@ -22,12 +24,11 @@ class Returns extends AbstractEndpoint
      * @param array $filter   Возможные ключи массива: id - UUID заявки, nmId - артикул WB
      * @param int   $limit    Количество заявок на странице
      *
-     * @return object {claims: [], total: int}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального значения параметра limit
      */
-    public function list(bool $archived, int $page = 1, array $filter = [], int $limit = 200): object
-    {
+    public function list(bool $archived, int $page = 1, array $filter = [], int $limit = 200): ApiResponse {
         $maxLimit = 200;
         if ($limit >  $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального значения параметра limit: {$maxLimit}");
@@ -50,22 +51,20 @@ class Returns extends AbstractEndpoint
      * @param string $action  Действие с заявкой (значение ReturnAction enum, например ReturnAction::APPROVE_CHECK->value)
      * @param string $comment Комментарий при ReturnAction::REJECT_CUSTOM->value
      *
-     * @return bool true - успешно
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный ответ на заявку
      */
-    public function action(string $id, string $action, string $comment = ''): bool
-    {
+    public function action(string $id, string $action, string $comment = ''): ApiResponse {
         if (ReturnAction::tryFrom($action) === null) {
             throw new InvalidArgumentException('Неизвестный ответ на заявку: ' . $action);
         }
-        $response = $this->patchResponse('/api/v1/claim', [
+        return $this->patchRequest('/api/v1/claim', [
             'id' => $id,
             'action' => $action,
         ] + ($action === ReturnAction::REJECT_CUSTOM->value ? [
             'comment' => $comment,
         ] : []));
-        return $response->statusCode === 200;
     }
 
 }

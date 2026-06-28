@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 
 class Chat extends AbstractEndpoint
@@ -17,10 +19,9 @@ class Chat extends AbstractEndpoint
      * Максимум 10 запросов за 10 секунд
      * @see https://openapi.wb.ru/buyers-chat/api/ru/#/paths/~1api~1v1~1seller~1chats/get
      *
-     * @return object {result: [object, ...], errors: any}
+     * @return ApiResponse
      */
-    public function list(): object
-    {
+    public function list(): ApiResponse {
         return $this->getRequest('/api/v1/seller/chats');
     }
 
@@ -40,7 +41,7 @@ class Chat extends AbstractEndpoint
      * @param int $next Пагинатор. С какого момента получить следующий пакет данных.
      *                     Формат Unix timestamp с миллисекундами
      * 
-     * @return object {
+     * @return ApiResponse
      *     result: {
      *         next: int,
      *         newestEventTime: string,
@@ -51,8 +52,7 @@ class Chat extends AbstractEndpoint
      *     errors: any
      * }
      */
-    public function events(int $next = 0): object
-    {
+    public function events(int $next = 0): ApiResponse {
         return $this->getRequest('/api/v1/seller/events', $next ? ['next' => $next] : []);
     }
 
@@ -66,7 +66,7 @@ class Chat extends AbstractEndpoint
      *                          Максимальный суммарный размер файлов - 30 Мб.
      * @see https://openapi.wb.ru/buyers-chat/api/ru/#/paths/~1api~1v1~1seller~1message/post
      * 
-     * @return object {
+     * @return ApiResponse
      *     result: {
      *         addTime: int,
      *         chatID: string
@@ -74,8 +74,7 @@ class Chat extends AbstractEndpoint
      *     errors: array
      * }
      */
-    public function message(string $replySign, string $message, array $images): object
-    {
+    public function message(string $replySign, string $message, array $images): ApiResponse {
         return $this->multipartRequest('/api/v1/seller/message', [
             'replySign' => $replySign,
             'message' => mb_substr($message, 0, 1000),

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\News;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Tags;
@@ -56,15 +58,14 @@ class Content extends AbstractEndpoint
      *                        ] ], ...
      *                      ]
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: null,
      * 	    error: bool, errorText: string, additionalErrors: object
      * }
      *
      * @throws InvalidArgumentException
      */
-    public function createCards(array $cards): object
-    {
+    public function createCards(array $cards): ApiResponse {
         $maxCountCards = 100;
         if (count($cards) > $maxCountCards) {
             throw new InvalidArgumentException("Превышение максимального количества КТ: {$maxCountCards}");
@@ -92,13 +93,12 @@ class Content extends AbstractEndpoint
      *                        ]
      *                      ]
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: null,
      * 	    error: bool, errorText: string, additionalErrors: object
      * }
      */
-    public function createCard(array $card): object
-    {
+    public function createCard(array $card): ApiResponse {
         return $this->createCards([$card]);
     }
 
@@ -128,15 +128,14 @@ class Content extends AbstractEndpoint
      *      ], ...
      *  ]
      *
-     * @return object {
+     * @return ApiResponse
      *      data: null,
      *      error: bool, errorText: string, additionalErrors: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального количества номенклатур
      */
-    public function updateCards(array $cards): object
-    {
+    public function updateCards(array $cards): ApiResponse {
         $maxCount = 3_000;
         if (count($cards) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества номенклатур: {$maxCount}");
@@ -167,13 +166,12 @@ class Content extends AbstractEndpoint
      *      sizes: [ object, object, ...]
      *  ]
      *
-     * @return object {
+     * @return ApiResponse
      *      data: null,
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function updateCard(array $card): object
-    {
+    public function updateCard(array $card): ApiResponse {
         return $this->postRequest('/content/v2/cards/update', [$card]);
     }
 
@@ -191,13 +189,12 @@ class Content extends AbstractEndpoint
      * 		                  { vendorCode: string, characteristics: [ object, object, ...], sizes: [ object, object, ...] }, ...
      *                      ]
      *
-     * @return object {
+     * @return ApiResponse
      *      data: null,
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function addCardNomenclature(string $imtID, array $cards)
-    {
+    public function addCardNomenclature(string $imtID, array $cards): ApiResponse {
         return $this->postRequest('/content/v2/cards/upload/add', [
             'imtID' => $imtID,
             'cardsToAdd' => $cards,
@@ -214,15 +211,14 @@ class Content extends AbstractEndpoint
      * @param int   $targetImt imtID, под которым необходимо объединить НМ
      * @param array $nmIds     nmID, которые необходимо объединить
      *
-     * @return object {
+     * @return ApiResponse
      *      data: { },
      *      error: bool, errorText: string, additionalErrors: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального количества номенклатур
      */
-    public function moveNms(int $targetImt, array $nmIds): object
-    {
+    public function moveNms(int $targetImt, array $nmIds): ApiResponse {
         $maxCount = 30;
         if (count($nmIds) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества номенклатур: {$maxCount}");
@@ -240,15 +236,14 @@ class Content extends AbstractEndpoint
      *
      * @param array $nmIds nmID, которые необходимо отсоединить (не более 30)
      *
-     * @return object {
+     * @return ApiResponse
      *      data: { },
      *      error: bool, errorText: string, additionalErrors: string
      * }
      *
      * @throws InvalidArgumentException Превышение максимального количества номенклатур
      */
-    public function removeNms(array $nmIds): object
-    {
+    public function removeNms(array $nmIds): ApiResponse {
         $maxCount = 30;
         if (count($nmIds) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества номенклатур: {$maxCount}");
@@ -265,14 +260,13 @@ class Content extends AbstractEndpoint
      *
      * @param int $count Количество баркодов которые надо сгенерировать, максимальное количество - 5000
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ string, string, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      * @throws InvalidArgumentException
      */
-    public function generateBarcodes(int $count): object
-    {
+    public function generateBarcodes(int $count): ApiResponse {
         $maxCount = 5_000;
         if ($count > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных баркодов: {$maxCount}");
@@ -297,7 +291,7 @@ class Content extends AbstractEndpoint
      *                            1 - Выдать КТ с фото
      * @param array  $tagIDs     Поиск по id тегов
      *
-     * @return object {
+     * @return ApiResponse
      *     cards: [ object, object, ... ],
      *     cursor: {updatedAt: string, nmID: int, total: int}
      * }
@@ -307,8 +301,7 @@ class Content extends AbstractEndpoint
     public function getCardsList(
         string $textSearch = '', int $limit = 100, string $updatedAt = '', int $nmId = 0,
         bool $ascending = false, int $withPhoto = -1, array $objectIDs = [], array $brands = [], array $tagIDs = [], int $imtID = 0,
-        bool $allowedCategoriesOnly = false): object
-    {
+        bool $allowedCategoriesOnly = false): ApiResponse {
         $maxCount = 100;
         if ($limit > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных карточек: {$maxCount}");
@@ -345,13 +338,12 @@ class Content extends AbstractEndpoint
      * Метод позволяет получить список НМ и список ошибок которые произошли во время создания КТ.
      * Для того чтобы убрать НМ из ошибочных, надо повторно сделать запрос с исправленными ошибками на создание КТ.
      *
-     * @return object {
+     * @return ApiResponse
      *      "data": [ {object: string, vendorCode: string, updatedAt: RFC3336, errors: [ string, ... ]}, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * 	}
      */
-    public function getErrorCardsList(): object
-    {
+    public function getErrorCardsList(): ApiResponse {
         return $this->getRequest('/content/v2/cards/error/list', ['locale' => getenv('WBSELLER_LOCALE')?:'ru']);
     }
 
@@ -364,7 +356,7 @@ class Content extends AbstractEndpoint
      *
      * @param string $vendorCode Артикул продавца
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {
      *          cards: [ object, object, ... ],
      *          cursor: {updatedAt: string, nmID: int, total: int}
@@ -372,8 +364,7 @@ class Content extends AbstractEndpoint
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getCardByVendorCode(string $vendorCode): object
-    {
+    public function getCardByVendorCode(string $vendorCode): ApiResponse {
         return $this->getCardsList($vendorCode);
     }
 
@@ -386,7 +377,7 @@ class Content extends AbstractEndpoint
      *
      * @param string $nmId Артикул WB
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {
      *          cards: [ object, object, ... ],
      *          cursor: {updatedAt: string, nmID: int, total: int}
@@ -394,8 +385,7 @@ class Content extends AbstractEndpoint
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getCardByNmID(string $nmId): object
-    {
+    public function getCardByNmID(string $nmId): ApiResponse {
         return $this->getCardsList($nmId);
     }
 
@@ -404,13 +394,12 @@ class Content extends AbstractEndpoint
      *
      * Метод позволяет получить отдельно бесплатные и платные лимиты продавца на создание карточек товаров
      *
-     * @return object {
+     * @return ApiResponse
      *      data: { freeLimits: int, paidLimits: int },
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getCardsLimits(): object
-    {
+    public function getCardsLimits(): ApiResponse {
         return $this->getRequest('/content/v2/cards/limits');
     }
 
@@ -426,13 +415,12 @@ class Content extends AbstractEndpoint
      * @param int    $offset   Номер позиции, с которой необходимо получить ответ
      * @param int    $limit    Ограничение по количеству выдваемых предметов
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ {subjectID: int, subjectName: string, parentID: int,  parentName: striing}, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function searchCategory(string $name = '', int $parentId = 0, int $offset = 0, int $limit = 1_000): object
-    {
+    public function searchCategory(string $name = '', int $parentId = 0, int $offset = 0, int $limit = 1_000): ApiResponse {
         return $this->getRequest('/content/v2/object/all', [
             'name' => $name,
             'offset' => $offset,
@@ -447,13 +435,12 @@ class Content extends AbstractEndpoint
      *
      * С помощью данного метода можно получить список всех родительских категорий товаров.
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ {name: string, isVisible: bool},	... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getParentCategories(): object
-    {
+    public function getParentCategories(): ApiResponse {
         return $this->getRequest('/content/v2/object/parent/all', ['locale' => getenv('WBSELLER_LOCALE')?:'ru']);
     }
 
@@ -464,13 +451,12 @@ class Content extends AbstractEndpoint
      *
      * @param int $objectId Идентификатор предмета
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [object, ...],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getCategoryCharacteristics(int $objectId): object
-    {
+    public function getCategoryCharacteristics(int $objectId): ApiResponse {
         return $this->getRequest('/content/v2/object/charcs/' . $objectId, ['locale' => getenv('WBSELLER_LOCALE')?:'ru']);
     }
 
@@ -487,14 +473,13 @@ class Content extends AbstractEndpoint
      * @param string $name   Имя характеристики
      * @param array  $params Параметры (для некоторых характеристик)
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ object, object, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      * @throws InvalidArgumentException
      */
-    public function getDirectory(string $name, array $params = []): object
-    {
+    public function getDirectory(string $name, array $params = []): ApiResponse {
         $directories = ['colors', 'kinds', 'countries', 'seasons', 'tnved', 'vat'];
         $directory = ltrim(strtolower($name), '/');
         if (!in_array($directory, $directories)) {
@@ -506,52 +491,48 @@ class Content extends AbstractEndpoint
     /**
      * Получение значений характеристики "Цвет"
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ {name: string, parentName: string}, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getDirectoryColors(): object
-    {
+    public function getDirectoryColors(): ApiResponse {
         return $this->getDirectory('colors');
     }
 
     /**
      * Получение значений характеристики "Пол"
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ string, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getDirectoryKinds(): object
-    {
+    public function getDirectoryKinds(): ApiResponse {
         return $this->getDirectory('kinds');
     }
 
     /**
      * Получение значений характеристики "Страна производства"
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ {name: string, fullName: string }, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getDirectoryCountries(): object
-    {
+    public function getDirectoryCountries(): ApiResponse {
         return $this->getDirectory('countries');
     }
 
     /**
      * Получение значений характеристики "Сезон"
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ string, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getDirectorySeasons(): object
-    {
+    public function getDirectorySeasons(): ApiResponse {
         return $this->getDirectory('seasons');
     }
 
@@ -560,13 +541,12 @@ class Content extends AbstractEndpoint
      *
      * С помощью данного метода можно получить список значений для характеристики Ставка НДС.
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [ string, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function getDirectoryNDS(): object
-    {
+    public function getDirectoryNDS(): ApiResponse {
         return $this->getDirectory('vat');
     }
 
@@ -578,13 +558,12 @@ class Content extends AbstractEndpoint
      * @param int    $subjectID Идентификатор предмета
      * @param string $search    Поиск по ТНВЭД-коду. Работает только в паре с subjectID
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [object, ... ],
      *      error: bool, errorText: string, additionalErrors: string
      * }
      */
-    public function searchDirectoryTNVED(int $subjectID, string $search = ''): object
-    {
+    public function searchDirectoryTNVED(int $subjectID, string $search = ''): ApiResponse {
         return $this->getDirectory('tnved', [
             'subjectID' => $subjectID,
             'search' => $search,
@@ -607,10 +586,9 @@ class Content extends AbstractEndpoint
      * @param int   $nmId      Артикул Wildberries
      * @param array $mediaList Ссылки на изображения в том порядке, в котором мы хотим их увидеть в карточке товара
      *
-     * @return object {data: any, error: bool, errorText: string, additionalErrors: string}
+     * @return ApiResponse
      */
-    public function updateMedia(int $nmId, array $mediaList): object
-    {
+    public function updateMedia(int $nmId, array $mediaList): ApiResponse {
         return $this->postRequest('/content/v3/media/save', [
             'nmId' => $nmId,
             'data' => $mediaList,
@@ -627,10 +605,9 @@ class Content extends AbstractEndpoint
      * @param int    $photoNumber Номер медиафайла на загрузку
      * @param string $file        Загружаемый файл
      *
-     * @return object {data: any, error: bool, errorText: string, additionalErrors: string}
+     * @return ApiResponse
      */
-    public function uploadMedia(string $nmID, int $photoNumber, string $file): object
-    {
+    public function uploadMedia(string $nmID, int $photoNumber, string $file): ApiResponse {
         return $this->multipartRequest('/content/v3/media/file', [[
                 'name' => 'uploadfile',
                 'contents' => $file,

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\BannedProducts;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Brands;
@@ -91,7 +93,7 @@ class Analytics extends AbstractEndpoint
      *                                            stockWbQty - по кол-ву остатков на складе шт.
      * @param string   $direction Направление сортировки (asc - по возрастанию, desc - по убыванию)
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {
      *          page: integer, isNextPage: bool,
      *          cards: [objectj, object, ...]
@@ -102,8 +104,7 @@ class Analytics extends AbstractEndpoint
      * @throws InvalidArgumentException Неизвестный вид сортировки
      * @throws InvalidArgumentException Неизвестный порядок сортировки
      */
-    public function nmReportDetail(DateTime $dateFrom, DateTime $dateTo, array $filter = [], int $page = 1, string $timezone='Europe/Moscow', string $orderBy = 'openCard', string $direction = 'desc'): object
-    {
+    public function nmReportDetail(DateTime $dateFrom, DateTime $dateTo, array $filter = [], int $page = 1, string $timezone='Europe/Moscow', string $orderBy = 'openCard', string $direction = 'desc'): ApiResponse {
         if (!in_array($orderBy, ["openCard", "addToCart", "orders", "avgRubPrice", "ordersSumRub", "stockMpQty", "stockWbQty", "cancelSumRub", "cancelCount", "buyoutCount", "buyoutSumRub"])) {
             throw new InvalidArgumentException('Неизвестный вид сортировки: ' . $orderBy);
         }
@@ -156,7 +157,7 @@ class Analytics extends AbstractEndpoint
      *                                            stockWbQty - по кол-ву остатков на складе шт.
      * @param string   $direction Направление сортировки (asc - по возрастанию, desc - по убыванию)
      *
-     * @return object {
+     * @return ApiResponse
      *      data: {
      *          page: integer, isNextPage: bool,
      *          groups: [object, object, ...]
@@ -167,8 +168,7 @@ class Analytics extends AbstractEndpoint
      * @throws InvalidArgumentException Неизвестный вид сортировки
      * @throws InvalidArgumentException Неизвестный порядок сортировки
      */
-    public function nmReportGrouped(DateTime $dateFrom, DateTime $dateTo, array $filter = [], int $page = 1, string $timezone = 'Europe/Moscow', string $orderBy = 'openCard', string $direction = 'desc'): object
-    {
+    public function nmReportGrouped(DateTime $dateFrom, DateTime $dateTo, array $filter = [], int $page = 1, string $timezone = 'Europe/Moscow', string $orderBy = 'openCard', string $direction = 'desc'): ApiResponse {
         if (!in_array($orderBy, ["openCard", "addToCart", "orders", "avgRubPrice", "ordersSumRub", "stockMpQty", "stockWbQty"])) {
             throw new InvalidArgumentException('Неизвестный вид сортировки: ' . $orderBy);
         }
@@ -205,7 +205,7 @@ class Analytics extends AbstractEndpoint
      * @param string   $agregation Тип аггрегации: day, week
      * @param string   $timezone   Временная зона
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [object, object, ...],
      *      error: bool, errorText: string, additionalErrors: [object, object, ...]
      * }
@@ -213,8 +213,7 @@ class Analytics extends AbstractEndpoint
      * @throws InvalidArgumentException Превышение максимального количества переданных артикулов
      * @throws InvalidArgumentException Неизвестный тип агрегации
      */
-    public function nmReportDetailHistory(array $nmIDs, DateTime $dateFrom, DateTime $dateTo, string $agregation = 'day', string $timezone = 'Europe/Moscow'): object
-    {
+    public function nmReportDetailHistory(array $nmIDs, DateTime $dateFrom, DateTime $dateTo, string $agregation = 'day', string $timezone = 'Europe/Moscow'): ApiResponse {
         $maxCount = 20;
         if (count($nmIDs) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных артикулов: {$maxCount}");
@@ -255,7 +254,7 @@ class Analytics extends AbstractEndpoint
         string $orderByMode = 'desc',
         int $limit = 1000,
         int $offset = 0
-    ) {
+    ): ApiResponse {
         return $this->postRequest('/api/analytics/v3/sales-funnel/products', [
             'selectedPeriod' => [
                 'start' => $selectedPeriodFrom->format('Y-m-d'),
@@ -300,7 +299,7 @@ class Analytics extends AbstractEndpoint
      * @param string   $agregation Тип аггрегации: day, week
      * @param string   $timezone   Временная зона
      *
-     * @return object {
+     * @return ApiResponse
      *      data: [object, object, ...],
      *      error: bool, errorText: string, additionalErrors: [object, object, ...]
      * }
@@ -308,8 +307,7 @@ class Analytics extends AbstractEndpoint
      * @throws InvalidArgumentException Превышение максимального произведения количества предметов, брендов, тегов
      * @throws InvalidArgumentException Неизвестный тип агрегации
      */
-    public function nmReportGroupedHistory(DateTime $dateFrom, DateTime $dateTo, array $filter = [], string $agregation = 'day', string $timezone = 'Europe/Moscow'): object
-    {
+    public function nmReportGroupedHistory(DateTime $dateFrom, DateTime $dateTo, array $filter = [], string $agregation = 'day', string $timezone = 'Europe/Moscow'): ApiResponse {
         $max = 16;
         if (
             count($this->getFromFilter('objectIDs', $filter))
@@ -353,10 +351,9 @@ class Analytics extends AbstractEndpoint
      *                            "AM", "BY", "KG", "KZ", "RU", "UZ"
      *                            Чтобы получить данные по всем странам, оставьте параметр пустым
      *
-     * @return array [object, object, ...]
+     * @return ApiResponse
      */
-    public function exciseReport(DateTime $dateFrom, DateTime $dateTo, array $countries = [])
-    {
+    public function exciseReport(DateTime $dateFrom, DateTime $dateTo, array $countries = []): ApiResponse {
         return $this->postRequest('/api/v1/analytics/excise-report?dateFrom=' . $dateFrom->format('Y-m-d') . '&dateTo=' . $dateTo->format('Y-m-d'), [
             'countries' => $countries,
         ]);
@@ -378,15 +375,13 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      *
-     * @return array Отчет [object, object, ...]
+     * @return ApiResponse
      */
-    public function acceptanceReport(DateTime $dateFrom, DateTime $dateTo):array
-    {
-        $result = $this->getRequest('/api/v1/analytics/acceptance-report', [
+    public function acceptanceReport(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/acceptance-report', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report;
     }
 
      /*
@@ -405,12 +400,10 @@ class Analytics extends AbstractEndpoint
      *
      * @param DateTime|null $date Дата, которая входит в отчётный период
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function antifraudDetails(?DateTime $date = null): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/antifraud-details', $date ? ['date' => $date->format('Y-m-d')] : []);
-        return $result->datails;
+    public function antifraudDetails(?DateTime $date = null): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/antifraud-details', $date ? ['date' => $date->format('Y-m-d')] : []);
     }
 
     /**
@@ -425,15 +418,13 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function incorrectAttachments(DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/incorrect-attachments', [
+    public function incorrectAttachments(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/incorrect-attachments', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report;
     }
 
     /**
@@ -447,12 +438,10 @@ class Analytics extends AbstractEndpoint
      *
      * @param DateTime|null $date Дата, которая входит в отчётный период
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function storageCoefficient(?DateTime $date = null): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/storage-coefficient', $date ? ['date' => $date->format('Y-m-d')] : []);
-        return $result->report;
+    public function storageCoefficient(?DateTime $date = null): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/storage-coefficient', $date ? ['date' => $date->format('Y-m-d')] : []);
     }
 
     /**
@@ -467,15 +456,13 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function goodsLabeling(DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/goods-labeling', [
+    public function goodsLabeling(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/goods-labeling', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report;
     }
 
     /**
@@ -491,15 +478,13 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function characteristicsChange(DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/characteristics-change', [
+    public function characteristicsChange(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/characteristics-change', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report;
     }
 
     /*
@@ -519,15 +504,13 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function regionSale(DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/region-sale', [
+    public function regionSale(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/region-sale', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report;
     }
 
     private function getFromFilter(string $param, array $filter)
@@ -554,15 +537,13 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function goodsReturn(DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->getRequest('/api/v1/analytics/goods-return', [
+    public function goodsReturn(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/analytics/goods-return', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report ?? [];
     }
 
     /*
@@ -581,13 +562,11 @@ class Analytics extends AbstractEndpoint
      * @param DateTime $dateFrom Дата начала отчётного периода
      * @param DateTime $dateTo   Дата окончания отчётного периода
      */
-    public function dailyDynamics(DateTime $dateFrom, DateTime $dateTo): array
-    {
-        $result = $this->getRequest('/api/v1/turnover-dynamics/daily-dynamics', [
+    public function dailyDynamics(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->getRequest('/api/v1/turnover-dynamics/daily-dynamics', [
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
-        return $result->report ?? [];
     }
 
 }

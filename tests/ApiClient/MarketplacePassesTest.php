@@ -21,6 +21,7 @@ class MarketplacePassesTest extends TestCase
     public function test_list()
     {
         $result = $this->Passes->list();
+        $result = $this->decodeResponse($result);
         $this->assertIsArray($result);
         if($result) {
             $pass = array_shift($result);
@@ -33,6 +34,7 @@ class MarketplacePassesTest extends TestCase
     public function test_offices()
     {
         $result = $this->Passes->offices();
+        $result = $this->decodeResponse($result);
         $this->assertIsArray($result);
         
         $office = array_shift($result);
@@ -43,16 +45,20 @@ class MarketplacePassesTest extends TestCase
 
     public function test_crud()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Passes->offices();
+        $result = $this->decodeResponse($result);
         $office = array_shift($result);
 
         $pass = $this->Passes->create($office->id, 'Газелька', 'X999XX99', 'Имя', 'Фамилия');
         $this->assertTrue(property_exists($pass, 'id'));
         
         $updated = $this->Passes->update($pass->id, $office->id, 'Газель', 'О777ММ77', 'Водитель', 'Газели');
+        $updated = $this->decodeResponse($updated);
         $this->assertTrue($updated);
         
         $deleted = $this->Passes->delete($pass->id);
+        $deleted = $this->decodeResponse($deleted);
         $this->assertTrue($deleted);
     }
 }

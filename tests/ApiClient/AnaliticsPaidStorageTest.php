@@ -22,6 +22,7 @@ class AnaliticsPaidStorageTest extends TestCase
     public function test_makeReport()
     {
         $result = $this->Analitics->PaidStorage()->makeReport(new \DateTime('2024-06-01'), new \DateTime('2024-06-07'));
+        $result = $this->decodeResponse($result);
         $this->assertIsString($result);
     }
 

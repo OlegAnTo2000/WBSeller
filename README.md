@@ -24,7 +24,8 @@ $wbSellerAPI = new \Dakword\WBSeller\API([
 ]);
 
 $contentAPI = $wbSellerAPI->Content();
-$cards = $contentAPI->getCardsList();
+$response = $contentAPI->getCardsList();
+$cards = $response->json();
 
 foreach ($cards->cards as $card) {
     echo $card->vendorCode . PHP_EOL;
@@ -35,45 +36,53 @@ foreach ($cards->cards as $card) {
 
 ### Ответ и обработка ошибок
 
-Endpoint-методы возвращают декодированное тело ответа. Метаданные конкретного HTTP-запроса доступны через immutable `ApiResponse`:
+Все endpoint-методы, выполняющие HTTP-запрос, возвращают immutable `ApiResponse`. Тело ответа декодируется явно:
 
 ```php
 use Dakword\WBSeller\Exception\ApiClientException;
+use Dakword\WBSeller\Exception\ApiResponseDecodingException;
 use Dakword\WBSeller\Exception\ApiTransportException;
 use Dakword\WBSeller\Exception\LocalTokenValidationException;
 
 try {
     $content = $wbSellerAPI->Content();
-    $cards = $content->getCardsList();
+    $response = $content->getCardsList();
+    $cards = $response->json();
 
-    $response = $content->lastResponse();
     echo $response->statusCode;
     echo $response->rateLimit->remaining;
-    print_r($response->headers);
+    echo $response->headerLine('X-Ratelimit-Limit');
+    echo $response->text(); // исходное тело без декодирования
 } catch (LocalTokenValidationException $exception) {
     // Локально обнаружены неверные claims, истёкший токен или отсутствие прав.
     echo $exception->getMessage();
 } catch (ApiClientException $exception) {
     // Сервер Wildberries вернул HTTP 4xx/5xx.
     echo $exception->statusCode();
-    var_dump($exception->response()?->body);
+    var_dump($exception->response()?->json());
+} catch (ApiResponseDecodingException $exception) {
+    // Ответ не является корректным JSON. Исходное тело доступно через text().
+    echo $exception->getMessage();
 } catch (ApiTransportException $exception) {
     // Timeout, DNS, соединение или ошибка middleware.
     echo $exception->getMessage();
 }
 ```
 
-`ApiResponse` содержит `body`, `rawBody`, `statusCode`, `reasonPhrase`, `headers` и `rateLimit`. Локальная проверка токена не проверяет подпись и отзыв токена — окончательную аутентификацию всегда выполняет сервер Wildberries.
+`ApiResponse` предоставляет `text()`, `json()`, `isEmpty()`, `header()`, `headerLine()` и `isSuccessful()`. Метаданные доступны через readonly-свойства `statusCode`, `reasonPhrase`, `headers` и `rateLimit`. `json()` возвращает `null` для пустого тела и бросает `ApiResponseDecodingException` для невалидного JSON.
+
+Локальная проверка токена не проверяет подпись и отзыв токена — окончательную аутентификацию всегда выполняет сервер Wildberries.
 
 ### Retry
 
 Retry по умолчанию отключён. Он включается отдельно для экземпляра endpoint:
 
 ```php
-$orders = $wbSellerAPI
+$response = $wbSellerAPI
     ->Marketplace()
     ->retryOnTooManyRequests(attempts: 3, delay: 2_000)
     ->getOrders();
+$orders = $response->json();
 ```
 
 Автоматический повтор выполняется для `429` и `504`. `GET` считается безопасным по умолчанию. `POST`, `PUT`, `PATCH`, `DELETE` и multipart не повторяются без явного разрешения.
@@ -83,15 +92,16 @@ $orders = $wbSellerAPI
 ```php
 use Dakword\WBSeller\API\Attribute\NonRetryable;
 use Dakword\WBSeller\API\Attribute\Retryable;
+use Dakword\WBSeller\API\Response\ApiResponse;
 
 #[Retryable]
-public function report(array $filter): object
+public function report(array $filter): ApiResponse
 {
     return $this->postRequest('/api/v1/report', $filter);
 }
 
 #[NonRetryable]
-public function runAction(): object
+public function runAction(): ApiResponse
 {
     return $this->getRequest('/api/v1/action');
 }
@@ -228,21 +238,21 @@ $marketApi = $wbSellerAPI->Marketplace();
 $tagsApi = $wbSellerAPI->Content()->Tags();
 
 // Получить список НМ
-$result = $contentApi->getCardsList();
+$result = $contentApi->getCardsList()->json();
 if (!$result->error) {
     var_dump($result->cards, $result->cursor);
 }
 
 // Получение информации по ценам и скидкам
-$info = $pricesApi->getPrices();
+$info = $pricesApi->getPrices()->json();
 var_dump($info);
 
 // Cписок складов поставщика
-$warehouses = $wbSellerAPI->Marketplace()->Warehouses()->list();
+$warehouses = $wbSellerAPI->Marketplace()->Warehouses()->list()->json();
 var_dump($warehouses);
 
 // Заказы FBS (С автоповтором запросов 💡)
-$orders = $marketApi->retryOnTooManyRequests(10, 1000)->getOrders();
+$orders = $marketApi->retryOnTooManyRequests(10, 1000)->getOrders()->json();
 var_dump($orders);
 
 // Создание КТ
@@ -284,7 +294,7 @@ try {
                 ],
             ],
         ]
-    ]);
+    ])->json();
     if ($createCardResult->error) {
         echo 'Ошибка создания карточки: ' . $createCardResult->errorText;
     } else {

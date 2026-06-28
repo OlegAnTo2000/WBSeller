@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use DateTime;
 use InvalidArgumentException;
 use Dakword\WBSeller\API\AbstractEndpoint;
@@ -18,12 +20,10 @@ class Documents extends AbstractEndpoint
      * Максимум 1 запрос в 10 секунд
      * @link https://openapi.wb.ru/documents/api/ru/#/paths/~1api~1v1~1documents~1categories/get
      *
-     * @return array [{name: string, title: string}, ...]
+     * @return ApiResponse
      */
-    public function categories(): array
-    {
-        return $this->getRequest('/api/v1/documents/categories')
-            ->data->categories;
+    public function categories(): ApiResponse {
+        return $this->getRequest('/api/v1/documents/categories');
     }
 
     /**
@@ -41,7 +41,7 @@ class Documents extends AbstractEndpoint
      *                              category — по категории (только при locale=ru)
      * @param string   $sortOrder   Направление сортировки: desc - по убыванию, asc - по возрастанию
      * 
-     * @return array [object, ...]
+     * @return ApiResponse
      * 
      * @throws InvalidArgumentException Неизвестная сортировка
      * @throws InvalidArgumentException Сортировка по caregory только при locale=ru
@@ -51,8 +51,7 @@ class Documents extends AbstractEndpoint
         ?DateTime $dateFrom = null, ?DateTime $dateTo = null,
         ?string $category = null, ?string $serviceName = null,
         string $orderBy = 'date', string $sortOrder = 'desc'
-    ): array
-    {
+    ): ApiResponse {
         if ($orderBy && !in_array($orderBy, ['category', 'date'])) {
             throw new InvalidArgumentException('Неизвестная сортировка: ' . $orderBy);
         }
@@ -75,7 +74,7 @@ class Documents extends AbstractEndpoint
             ] : []) + ($serviceName ? [
                 'serviceName' => $serviceName,
             ] : [])
-        )->data->documents;
+        );
     }
 
     /**
@@ -88,18 +87,17 @@ class Documents extends AbstractEndpoint
      * @param string $serviceName Уникальный ID документа
      * @param string $extension   Формат документа
      * 
-     * @return object {
+     * @return ApiResponse
      *      fileName: string,
      *      extension: string,
      *      document: base64 string
      * }
      */
-    public function get(string $serviceName, string $extension = 'zip'): object
-    {
+    public function get(string $serviceName, string $extension = 'zip'): ApiResponse {
         return $this->getRequest('/api/v1/documents/download', [
             'serviceName' => $serviceName,
             'extension' => $extension,
-        ])->data;
+        ]);
     }
     
     /**
@@ -117,17 +115,16 @@ class Documents extends AbstractEndpoint
      *                              ...
      *                          ]
      * 
-     * @return object {
+     * @return ApiResponse
      *      fileName: string,
      *      extension: string,
      *      document: base64 string
      * }
      */
-    public function getDocuments(array $documents): object
-    {
+    public function getDocuments(array $documents): ApiResponse {
         return $this->getRequest('/api/v1/documents/download/all', [
             'params' => $documents,
-        ])->data;
+        ]);
     }
     
 }

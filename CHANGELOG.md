@@ -2,9 +2,10 @@
 
 #### ⚠ Breaking changes
 
-* `Client::request()` возвращает immutable `ApiResponse`, а не только декодированное тело.
-* Удалены mutable-свойства последнего ответа из `Client`. `ApiResponse` содержит `body`,
-  `rawBody`, `statusCode`, `reasonPhrase`, `headers` и `rateLimit`.
+* Все HTTP-методы endpoint и `Client::request()` возвращают исходный immutable `ApiResponse`.
+  Автоматическое преобразование ответа в object, array, bool, scalar или DTO удалено.
+* Удалены mutable-состояние последнего ответа и методы `lastResponse()`, `responseCode()`,
+  `response()`, `responsePhrase()`, `responseHeaders()`, `rawResponse()`, `responseRate()`.
 * Все HTTP-ответы `4xx/5xx` представлены `ApiClientException` независимо от формата тела.
   Сетевые ошибки и исключения middleware представлены `ApiTransportException`.
 * Retry по умолчанию отключён. `GET` можно повторять после явного включения retry;
@@ -13,7 +14,9 @@
 
 #### Новое
 
-* Добавлены `ApiResponse` и `RateLimit` для передачи тела и HTTP-метаданных одним объектом.
+* Добавлены `ApiResponse` и `RateLimit` для передачи исходного тела и HTTP-метаданных одним объектом.
+* Добавлены явные методы `text()`, `json()`, `isEmpty()`, `header()`, `headerLine()` и `isSuccessful()`.
+* Добавлен `ApiResponseDecodingException` для ошибок явного JSON-декодирования.
 * Добавлены атрибуты `Retryable` и `NonRetryable` для управления безопасностью повторов.
 * Добавлены `ApiTransportException` и `LocalTokenValidationException`.
 * Локальная проверка JWT claims вынесена в `TokenClaimsValidator` и отделена от серверной аутентификации.

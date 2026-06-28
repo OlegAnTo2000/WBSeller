@@ -54,7 +54,6 @@ abstract class AbstractEndpoint
     private int $attempts = 1;
     private int $retryDelay = 5_000;
     private Client $Client;
-    private ?ApiResponse $lastResponse = null;
     private ?string $proxyUrl = null;
 
     /**
@@ -187,122 +186,38 @@ abstract class AbstractEndpoint
         return $this;
     }
 
-    /** HTTP-статус последнего запроса (0 до первого запроса). */
-    public function responseCode(): int
-    {
-        return $this->lastResponse?->statusCode ?? 0;
-    }
-
-    /** Текстовая фраза HTTP-статуса последнего запроса. */
-    public function responsePhrase(): ?string
-    {
-        return $this->lastResponse?->reasonPhrase;
-    }
-
-    /** Заголовки последнего ответа в виде ['Header-Name' => ['value']]. */
-    public function responseHeaders(): array
-    {
-        return $this->lastResponse?->headers ?? [];
-    }
-
-    /** Сырое тело последнего ответа в виде строки. */
-    public function rawResponse(): ?string
-    {
-        return $this->lastResponse?->rawBody;
-    }
-
-    /** Декодированный ответ последнего запроса (object при JSON, string иначе). */
-    public function response()
-    {
-        return $this->lastResponse?->body;
-    }
-
-    /**
-     * Данные rate-limit из заголовков последнего ответа.
-     *
-     * @return array{limit: int, remaining: int, reset: int, retry: int}
-     *   - limit:     максимальное число запросов в окне
-     *   - remaining: оставшееся число запросов
-     *   - reset:     Unix-timestamp сброса счётчика
-     *   - retry:     рекомендуемая задержка в секундах (при 429)
-     */
-    public function responseRate(): array
-    {
-        return $this->lastResponse?->rateLimit->toArray() ?? [
-            'limit' => 0,
-            'remaining' => 0,
-            'reset' => 0,
-            'retry' => 0,
-        ];
-    }
-
-    public function lastResponse(): ?ApiResponse
-    {
-        return $this->lastResponse;
-    }
-
     /** Выполняет GET-запрос; параметры передаются в query string. */
-    public function getRequest(string $path, array $data = [], array $addonHeaders = [])
-    {
-        return $this->getResponse($path, $data, $addonHeaders)->body;
-    }
-
-    public function getResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
+    public function getRequest(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::GET, $path, $data, $addonHeaders);
     }
 
     /** Выполняет POST-запрос; параметры сериализуются в JSON-тело. */
-    public function postRequest(string $path, array $data = [], array $addonHeaders = [])
-    {
-        return $this->postResponse($path, $data, $addonHeaders)->body;
-    }
-
-    public function postResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
+    public function postRequest(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::POST, $path, $data, $addonHeaders);
     }
 
     /** Выполняет PUT-запрос; параметры сериализуются в JSON-тело. */
-    public function putRequest(string $path, array $data = [], array $addonHeaders = [])
-    {
-        return $this->putResponse($path, $data, $addonHeaders)->body;
-    }
-
-    public function putResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
+    public function putRequest(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::PUT, $path, $data, $addonHeaders);
     }
 
     /** Выполняет PATCH-запрос; параметры сериализуются в JSON-тело. */
-    public function patchRequest(string $path, array $data = [], array $addonHeaders = [])
-    {
-        return $this->patchResponse($path, $data, $addonHeaders)->body;
-    }
-
-    public function patchResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
+    public function patchRequest(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::PATCH, $path, $data, $addonHeaders);
     }
 
     /** Выполняет DELETE-запрос; параметры сериализуются в JSON-тело. */
-    public function deleteRequest(string $path, array $data = [], array $addonHeaders = [])
-    {
-        return $this->deleteResponse($path, $data, $addonHeaders)->body;
-    }
-
-    public function deleteResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
+    public function deleteRequest(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::DELETE, $path, $data, $addonHeaders);
     }
 
     /** Выполняет POST-запрос с multipart/form-data (для загрузки файлов). */
-    public function multipartRequest(string $path, array $data = [], array $addonHeaders = [])
-    {
-        return $this->multipartResponse($path, $data, $addonHeaders)->body;
-    }
-
-    public function multipartResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
+    public function multipartRequest(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::MULTIPART, $path, $data, $addonHeaders);
     }
@@ -330,9 +245,8 @@ abstract class AbstractEndpoint
 
         while (true) {
             try {
-                return $this->lastResponse = $this->Client->request($method, $path, $data, $addonHeaders);
+                return $this->Client->request($method, $path, $data, $addonHeaders);
             } catch (ApiClientException $exception) {
-                $this->lastResponse = $exception->response();
                 $status = $exception->statusCode();
                 $message = $exception->getMessage();
 

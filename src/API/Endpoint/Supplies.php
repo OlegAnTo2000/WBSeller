@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use InvalidArgumentException;
 
@@ -22,8 +24,7 @@ class Supplies extends AbstractEndpoint
      *
      * @param array $warehouses ID складов. Если параметр не указан, возвращаются данные по всем складам
      */
-    public function coefficients(array $warehouses = [])
-    {
+    public function coefficients(array $warehouses = []): ApiResponse {
         return $this->getRequest('/api/v1/acceptance/coefficients', $warehouses ? [
             'warehouseIDs' => implode(',', $warehouses),
         ] : []);
@@ -42,8 +43,7 @@ class Supplies extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых товаров
      */
-    public function options(array $items, ?int $warehouseId = null)
-    {
+    public function options(array $items, ?int $warehouseId = null): ApiResponse {
         $maxLimit = 5_000;
         if (count($items) > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых товаров: {$maxLimit}");
@@ -58,8 +58,7 @@ class Supplies extends AbstractEndpoint
      * Максимум 6 запросов в минуту
      * @link https://openapi.wb.ru/supplies/api/ru/#tag/Informaciya-dlya-formirovaniya-postavok/paths/~1api~1v1~1warehouses/get
      */
-    public function warehouses()
-    {
+    public function warehouses(): ApiResponse {
         return $this->getRequest('/api/v1/warehouses');
     }
 }

@@ -18,11 +18,16 @@ use Dakword\WBSeller\API\Endpoint\Subpoint\Passes;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Tags;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Templates;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Warehouses;
+use Dakword\WBSeller\API\Response\ApiResponse;
 use Dakword\WBSeller\Exception\ApiTimeRestrictionsException;
 use Dakword\WBSeller\Tests\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function decodeResponse(mixed $value): mixed
+    {
+        return $value instanceof ApiResponse ? $value->json() : $value;
+    }
 
     protected function Adv(): Adv
     {
@@ -129,7 +134,7 @@ abstract class TestCase extends BaseTestCase
     protected function getRealNms($limit = 10)
     {
         try {
-            $result = $this->Content()->getCardsList('', $limit);
+            $result = $this->Content()->getCardsList('', $limit)->json();
         } catch (ApiTimeRestrictionsException $exc) {
             $this->markTestSkipped($exc->getMessage());
         }

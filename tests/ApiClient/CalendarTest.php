@@ -23,6 +23,7 @@ class CalendarTest extends TestCase
     {
         $result = $this->API()->Calendar()
             ->promotions(new \DateTime('2024-07-01'), new \DateTime());
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result->data->promotions);
     }
@@ -38,10 +39,12 @@ class CalendarTest extends TestCase
             new \DateTime(),
             false
         );
+        $promotions = $this->decodeResponse($promotions);
 
         if($promotions->data->promotions ?? false) {
             $last = array_pop($promotions->data->promotions);
-            $result = $calendar->promotionsDetails([$last->id]);
+        $result = $calendar->promotionsDetails([$last->id]);
+            $result = $this->decodeResponse($result);
             $this->assertIsArray($result->data->promotions ?? false);
         }
     }
@@ -57,13 +60,15 @@ class CalendarTest extends TestCase
             new \DateTime(),
             true
         );
+        $promotions = $this->decodeResponse($promotions);
 
         if($promotions->data->promotions ?? false) {
             $actions = array_filter($promotions->data->promotions, fn($action) => $action->type != 'auto');
             $action = array_pop($actions);
 
             if($action) {
-                $result = $calendar->promotionNomenclatures($action->id);
+        $result = $calendar->promotionNomenclatures($action->id);
+                $result = $this->decodeResponse($result);
                 $this->assertIsArray($result->data->nomenclatures ?? false);
             }
         }

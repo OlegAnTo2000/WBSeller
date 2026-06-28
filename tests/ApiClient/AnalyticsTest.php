@@ -25,6 +25,7 @@ class AnalyticsTest extends TestCase
     public function test_nmReportDetail()
     {
         $result1 = $this->Analytics->nmReportDetail(new \DateTime('2024-09-01 00:00:00'), new \DateTime());
+        $result1 = $this->decodeResponse($result1);
 
         $this->assertFalse($result1->error);
         $this->assertIsArray($result1->data->cards);
@@ -34,6 +35,7 @@ class AnalyticsTest extends TestCase
                 'nmIDs' => [1234567],
             ]
         );
+        $result2 = $this->decodeResponse($result2);
         $this->assertFalse($result2->error);
         $this->assertEquals(null, $result2->data->cards);
 
@@ -42,6 +44,7 @@ class AnalyticsTest extends TestCase
     public function test_nmReportGrouped()
     {
         $result1 = $this->Analytics->nmReportGrouped(new \DateTime('2024-09-01'), new \DateTime());
+        $result1 = $this->decodeResponse($result1);
         $this->assertFalse($result1->error);
         $this->assertIsArray($result1->data->groups);
 
@@ -50,6 +53,7 @@ class AnalyticsTest extends TestCase
                 'brandNames' => ['Adidas'],
             ]
         );
+        $result2 = $this->decodeResponse($result2);
         $this->assertFalse($result2->error);
         $this->assertIsArray($result2->data->groups);
 
@@ -58,6 +62,7 @@ class AnalyticsTest extends TestCase
     public function test_nmReportDetailHistory()
     {
         $result = $this->Analytics->nmReportDetailHistory([1234567], new \DateTime('2024-09-01'), new \DateTime());
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
         $this->assertIsArray($result->data);
@@ -66,6 +71,7 @@ class AnalyticsTest extends TestCase
     public function test_nmReportGroupedHistory()
     {
         $result = $this->Analytics->nmReportGroupedHistory(new \DateTime('2024-09-01'), new \DateTime());
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
         $this->assertIsArray($result->data);
@@ -74,6 +80,7 @@ class AnalyticsTest extends TestCase
     public function test_exciseReport()
     {
         $result = $this->Analytics->exciseReport(new \DateTime('2024-09-01'), new \DateTime());
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result->response->data);
     }
@@ -81,6 +88,7 @@ class AnalyticsTest extends TestCase
     public function test_goodsReturn()
     {
         $result = $this->Analytics->goodsReturn(new \DateTime('2024-08-01'), new \DateTime('2024-08-31'));
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result);
 
@@ -93,6 +101,7 @@ class AnalyticsTest extends TestCase
     public function test_dailyDynamics()
     {
         $result = $this->Analytics->dailyDynamics(new \DateTime('2024-11-01'), new \DateTime('2024-11-30'));
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result);
 

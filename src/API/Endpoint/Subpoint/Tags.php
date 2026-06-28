@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Content;
 use InvalidArgumentException;
 
@@ -29,12 +31,11 @@ class Tags
      * @param int   $nmID Артикул WB
      * @param array $tags Массив числовых идентификаторов тегов (К карточке можно добавить 8 тегов)
      * 
-     * @return object {data: any, error: bool, errorText: string, additionalErrors: any}
+     * @return ApiResponse
      * 
      * @throws InvalidArgumentException Превышение максимального количества тегов
      */
-    public function setNomenclatureTags(int $nmID, array $tags): object
-    {
+    public function setNomenclatureTags(int $nmID, array $tags): ApiResponse {
         $maxTags = 8;
         if (count($tags) > $maxTags) {
             throw new InvalidArgumentException("Превышение максимального количества тегов: {$maxTags}");
@@ -52,10 +53,9 @@ class Tags
      * Метод позволяет получить список существующих тегов продавца
      * @see https://openapi.wb.ru/content/api/ru/#tag/Tegi/paths/~1content~1v2~1tags/get
      * 
-     * @return object {data: [object, ...], error: bool, errorText: string, additionalErrors: string}
+     * @return ApiResponse
      */
-    public function list(): object
-    {
+    public function list(): ApiResponse {
         return $this->Content->getRequest('/content/v2/tags');
     }
 
@@ -70,13 +70,12 @@ class Tags
      *                      Доступные цвета: D1CFD7 - серый, FEE0E0 - красный, ECDAFF - фиолетовый,
      *                                       E4EAFF - синий, DEF1DD - зеленный, FFECC7 - желтый
      * 
-     * @return object {data: any, error: bool, errorText: string, additionalErrors: any}
+     * @return ApiResponse
      * 
      * @throws InvalidArgumentException Превышение максимального длины имени тега
      * @throws InvalidArgumentException Неизвестный цвет
      */
-    public function create(string $name, string $color): object
-    {
+    public function create(string $name, string $color): ApiResponse {
         $this->checkName($name);
         $this->checkColor($color);
         return $this->Content->postRequest('/content/v2/tag', [
@@ -91,10 +90,9 @@ class Tags
      * 
      * @param int $id Числовой идентификатор тега
      * 
-     * @return object {data: any, error: bool, errorText: string, additionalErrors: any}
+     * @return ApiResponse
      */
-    public function delete(int $id): object
-    {
+    public function delete(int $id): ApiResponse {
         return $this->Content->deleteRequest('/content/v1/tag/' . $id);
     }
     
@@ -110,13 +108,12 @@ class Tags
      *                      Доступные цвета: D1CFD7 - серый, FEE0E0 - красный, ECDAFF - фиолетовый,
      *                                       E4EAFF - синий, DEF1DD - зеленный, FFECC7 - желтый
      * 
-     * @return object {data: any, error: bool, errorText: string, additionalErrors: any}
+     * @return ApiResponse
      * 
      * @throws InvalidArgumentException Превышение максимального длины имени тега
      * @throws InvalidArgumentException Неизвестный цвет
      */
-    public function update(int $id, string $name, string $color): object
-    {
+    public function update(int $id, string $name, string $color): ApiResponse {
         $this->checkName($name);
         $this->checkColor($color);
         return $this->Content->patchRequest('/content/v2/tag/' . $id, [

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Content;
 use InvalidArgumentException;
 
@@ -32,15 +34,14 @@ class Trash
      * @param int    $nmId       Номенклатура последней КТ из предыдущего ответа на запрос списка КТ
      * @param bool   $ascending  Направление сортировки. true - по возрастанию, false - по убыванию
      *                           Поле, по которому будет сортироваться список - trashedAt
-     * @return object {
+     * @return ApiResponse
      *      cards: [object, object, ...],
      *      cursor: { trashedAt: datetime, nmID: int, total: int }
      * }
      * 
      * @throws InvalidArgumentException Превышение максимального количества запрошенных карточек
      */
-    public function list(string $textSearch = '', int $limit = 100, string $trashedAt = '', int $nmId = 0, bool $ascending = false)
-    {
+    public function list(string $textSearch = '', int $limit = 100, string $trashedAt = '', int $nmId = 0, bool $ascending = false): ApiResponse {
         $maxLimit = 100;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных карточек: {$maxLimit}");
@@ -73,15 +74,14 @@ class Trash
      * 
      * @param array $nmIDs Артикулы WB
      * 
-     * @return object {
+     * @return ApiResponse
      *      data: null,
      *      error: bool, errorText: string, additionalErrors: string
      * }
      * 
      * @throws InvalidArgumentException Превышение максимального количества удаляемых карточек
      */
-    public function add(array $nmIDs): object
-    {
+    public function add(array $nmIDs): ApiResponse {
         $maxCount = 1_000;
         if (count($nmIDs) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества удаляемых карточек: {$maxCount}");
@@ -99,15 +99,14 @@ class Trash
      * 
      * @param array $nmIDs Артикулы WB
      * 
-     * @return object {
+     * @return ApiResponse
      *      data: null,
      *      error: bool, errorText: string, additionalErrors: string
      * }
      * 
      * @throws InvalidArgumentException Превышение максимального количества удаляемых карточек
      */
-    public function recover(array $nmIDs): object
-    {
+    public function recover(array $nmIDs): ApiResponse {
         $maxCount = 1_000;
         if (count($nmIDs) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества восстанавливаемых карточек: {$maxCount}");

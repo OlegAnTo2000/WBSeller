@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use DateTime;
 
@@ -19,14 +21,12 @@ class Tariffs extends AbstractEndpoint
      * Максимум - 1 запрос в минуту.
      * @see https://openapi.wb.ru/tariffs/api/ru/#tag/Komissii/paths/~1api~1v1~1tariffs~1commission/get
      *
-     * @return array Список комиссий
+     * @return ApiResponse
      */
-    public function commission(): array
-    {
+    public function commission(): ApiResponse {
         return $this->getRequest('/api/v1/tariffs/commission', [
             'locale' => $this->locale()
-        ])
-        ->report;
+        ]);
     }
 
     /**
@@ -42,14 +42,12 @@ class Tariffs extends AbstractEndpoint
      *
      * @param DateTime $date Дата
      *
-     * @return object {dtFromMin: string, dtNextBox: string, dtTillMax: string, warehouseList: array}
+     * @return ApiResponse
      */
-    public function box(DateTime $date): object
-    {
+    public function box(DateTime $date): ApiResponse {
         return $this->getRequest('/api/v1/tariffs/box', [
             'date' => $date->format('Y-m-d'),
-        ])
-        ->response->data;
+        ]);
     }
 
     /**
@@ -65,14 +63,12 @@ class Tariffs extends AbstractEndpoint
      *
      * @param DateTime $date Дата
      *
-     * @return object {dtFromMin: string, dtNextPallet: string, dtTillMax: string, warehouseList: array}
+     * @return ApiResponse
      */
-    public function pallet(DateTime $date): object
-    {
+    public function pallet(DateTime $date): ApiResponse {
         return $this->getRequest('/api/v1/tariffs/pallet', [
             'date' => $date->format('Y-m-d'),
-        ])
-        ->response->data;
+        ]);
     }
 
     /**
@@ -87,14 +83,12 @@ class Tariffs extends AbstractEndpoint
      *
      * @param DateTime $date Дата
      *
-     * @return object {dtNextDeliveryDumpKgt: string, dtNextDeliveryDumpSrg: string, dtNextDeliveryDumpSup: string, warehouseList: array}
+     * @return ApiResponse
      */
-    public function return(DateTime $date): object
-    {
+    public function return(DateTime $date): ApiResponse {
         return $this->getRequest('/api/v1/tariffs/return', [
             'date' => $date->format('Y-m-d'),
-        ])
-        ->response->data;
+        ]);
     }
 
 }

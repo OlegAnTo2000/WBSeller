@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use InvalidArgumentException;
 use Dakword\WBSeller\API\Endpoint\Analytics;
 
@@ -32,13 +34,12 @@ class BannedProducts
      *                                      reason - по причине блокировки
      * @param string $direction Направление сортировки (asc - по возрастанию, desc - по убыванию)
      *
-     * @return array
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный критерий сортировки
      * @throws InvalidArgumentException Неизвестный порядок сортировки
      */
-    public function blocked(string $sort = 'nmId', string $direction = 'asc'): array
-    {
+    public function blocked(string $sort = 'nmId', string $direction = 'asc'): ApiResponse {
         if (!in_array($sort, ['brand', 'nmId', 'title', 'vendorCode', 'reason'])) {
             throw new InvalidArgumentException('Неизвестный критерий сортировки: ' . $sort);
         }
@@ -50,8 +51,7 @@ class BannedProducts
             ->getRequest('/api/v1/analytics/banned-products/blocked', [
                 'sort' => $sort,
                 'order' => $direction,
-            ])
-        ->report ?? [];
+            ]);
     }
 
     /**
@@ -67,13 +67,12 @@ class BannedProducts
      *                                      nmRating - по рейтингу товара
      * @param string $direction Направление сортировки (asc - по возрастанию, desc - по убыванию)
      *
-     * @return array
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный критерий сортировки
      * @throws InvalidArgumentException Неизвестный порядок сортировки
      */
-    public function shadowed(string $sort = 'nmId', string $direction = 'asc'): array
-    {
+    public function shadowed(string $sort = 'nmId', string $direction = 'asc'): ApiResponse {
         if (!in_array($sort, ['brand', 'nmId', 'title', 'vendorCode', 'nmRating'])) {
             throw new InvalidArgumentException('Неизвестный критерий сортировки: ' . $sort);
         }
@@ -85,7 +84,6 @@ class BannedProducts
             ->getRequest('/api/v1/analytics/banned-products/shadowed', [
                 'sort' => $sort,
                 'order' => $direction,
-            ])
-        ->report ?? [];
+            ]);
     }
 }

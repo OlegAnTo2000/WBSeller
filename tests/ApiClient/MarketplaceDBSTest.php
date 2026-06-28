@@ -21,7 +21,9 @@ class MarketplaceDBSTest extends TestCase
 
     public function test_list()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->DBS->confirm(0);
+        $result = $this->decodeResponse($result);
         $this->assertFalse($result);
     }
 

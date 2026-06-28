@@ -7,6 +7,7 @@ namespace Dakword\WBSeller\API;
 use Dakword\WBSeller\API\Response\ApiResponse;
 use Dakword\WBSeller\API\Response\RateLimit;
 use Dakword\WBSeller\Exception\ApiClientException;
+use Dakword\WBSeller\Exception\ApiResponseDecodingException;
 use Dakword\WBSeller\Exception\ApiTransportException;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\RequestException;
@@ -198,14 +199,14 @@ class Client
             if ($exc->hasResponse()) {
                 $resp = $exc->getResponse();
                 $apiResponse = $this->createResponse($resp);
-                $message = $this->errorMessage($apiResponse->body, $apiResponse->reasonPhrase);
+                $message = $this->errorMessage($apiResponse);
 
                 $this->emit('error', $this->onError, [
                     'request_id'      => $requestId,
                     'method'          => $method,
                     'url'             => $url,
                     'status'          => $apiResponse->statusCode,
-                    'raw'             => $apiResponse->rawBody,
+                    'raw'             => $apiResponse->text(),
                     'duration_ms'     => (int) ((microtime(true) - $startedAt) * 1000),
                     'exception_class' => get_class($exc),
                     'message'         => $message,
@@ -235,7 +236,7 @@ class Client
             'url'         => $url,
             'status'      => $apiResponse->statusCode,
             'headers'     => $this->maskHeaders($apiResponse->headers),
-            'raw'         => $apiResponse->rawBody,
+            'raw'         => $apiResponse->text(),
             'duration_ms' => $durationMs,
         ]);
 
@@ -247,8 +248,7 @@ class Client
         $rawBody = (string) $response->getBody();
 
         return new ApiResponse(
-            body: $this->decodeResponse($rawBody),
-            rawBody: $rawBody,
+            body: $rawBody,
             statusCode: $response->getStatusCode(),
             reasonPhrase: $response->getReasonPhrase(),
             headers: $response->getHeaders(),
@@ -261,8 +261,14 @@ class Client
         );
     }
 
-    private function errorMessage(mixed $body, ?string $fallback): string
+    private function errorMessage(ApiResponse $response): string
     {
+        try {
+            $body = $response->json();
+        } catch (ApiResponseDecodingException) {
+            $body = null;
+        }
+
         if (is_object($body) && isset($body->errors[0]) && is_string($body->errors[0])) {
             return $body->errors[0];
         }
@@ -272,11 +278,11 @@ class Client
         if (is_object($body) && isset($body->message) && is_string($body->message) && $body->message !== '') {
             return $body->message;
         }
-        if (is_string($body) && $body !== '') {
-            return $body;
+        if (!$response->isEmpty()) {
+            return $response->text();
         }
 
-        return $fallback ?: 'HTTP request failed';
+        return $response->reasonPhrase ?: 'HTTP request failed';
     }
 
     private function emitTransportError(
@@ -296,21 +302,6 @@ class Client
             'exception_class' => get_class($exception),
             'message' => $exception->getMessage(),
         ]);
-    }
-
-    /**
-     * JSON сохраняет естественный тип, пустое тело становится null,
-     * невалидный JSON возвращается исходной строкой.
-     */
-    private function decodeResponse(string $body): mixed
-    {
-        if ($body === '') {
-            return null;
-        }
-
-        $decoded = json_decode($body);
-
-        return json_last_error() === JSON_ERROR_NONE ? $decoded : $body;
     }
 
     /**

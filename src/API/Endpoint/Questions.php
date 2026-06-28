@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\Templates;
 use InvalidArgumentException;
@@ -29,13 +31,12 @@ class Questions extends AbstractEndpoint
      * @param \DateTime $dateFrom Дата начала периода
      * @param \DateTime $dateTo   Дата окончания периода
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: int,
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function unansweredCountByPeriod(\DateTime $dateFrom, \DateTime $dateTo): object
-    {
+    public function unansweredCountByPeriod(\DateTime $dateFrom, \DateTime $dateTo): ApiResponse {
         return $this->getRequest('/api/v1/questions/count', [
             'dateFrom' => $dateFrom->getTimestamp(),
             'dateTo' => $dateTo->getTimestamp(),
@@ -49,13 +50,12 @@ class Questions extends AbstractEndpoint
      * @param \DateTime $dateFrom Дата начала периода
      * @param \DateTime $dateTo   Дата окончания периода
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: int,
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function answeredCountByPeriod(\DateTime $dateFrom, \DateTime $dateTo): object
-    {
+    public function answeredCountByPeriod(\DateTime $dateFrom, \DateTime $dateTo): ApiResponse {
         return $this->getRequest('/api/v1/questions/count', [
             'dateFrom' => $dateFrom->getTimestamp(),
             'dateTo' => $dateTo->getTimestamp(),
@@ -66,13 +66,12 @@ class Questions extends AbstractEndpoint
     /**
      * Неотвеченные вопросы за сегодня и за всё время
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {countUnanswered: int, countUnansweredToday: int, valuation: string},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function unansweredCount(): object
-    {
+    public function unansweredCount(): ApiResponse {
         return $this->getRequest('/api/v1/questions/count-unanswered');
     }
 
@@ -81,13 +80,12 @@ class Questions extends AbstractEndpoint
      *
      * Метод отображает информацию о наличии у продавца непросмотренных отзывов и вопросов
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {hasNewQuestions: bool, hasNewFeedbacks: bool},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function hasNew(): object
-    {
+    public function hasNew(): ApiResponse {
         return $this->getRequest('/api/v1/new-feedbacks-questions');
     }
 
@@ -104,7 +102,7 @@ class Questions extends AbstractEndpoint
      * @param \DateTime|null $dateFrom          Дата начала периода
      * @param \DateTime|null $dateTo            Дата окончания периода
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {countUnanswered: int, countArchive: int, questions: [object, ...]},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
@@ -113,8 +111,7 @@ class Questions extends AbstractEndpoint
      */
     public function list(int $page = 1, int $onPage = 10_000, bool $isAnswered = false, int $nmId = 0, ?string $order = null,
         ?\DateTime $dateFrom = null, ?\DateTime $dateTo = null
-    ): object
-    {
+    ): ApiResponse {
         $maxCount = 10_000;
         if ($onPage > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрошенных отзывов: {$maxCount}");
@@ -141,13 +138,12 @@ class Questions extends AbstractEndpoint
      *
      * @param bool $isAnswered Обработанные вопросы (true) или необработанные вопросы (false)
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: {filename: string, contentType: string, file: base64},
      * 	    error: bool, errorText: string, additionalErrors: ?string
      * }
      */
-    public function xlsReport(bool $isAnswered = false): object
-    {
+    public function xlsReport(bool $isAnswered = false): ApiResponse {
         return $this->getRequest('/api/v1/questions/report', [
                 'isAnswered' => $isAnswered,
             ]
@@ -160,15 +156,13 @@ class Questions extends AbstractEndpoint
      * @param string $id        Идентификатор вопроса
      * @param bool   $wasViewed Просмотрен (true) или не просмотрен (false)
      *
-     * @return bool true - успешно, false - неудача
+     * @return ApiResponse
      */
-    public function changeViewed(string $id, bool $wasViewed): bool
-    {
-        $response = $this->patchResponse('/api/v1/questions', [
+    public function changeViewed(string $id, bool $wasViewed): ApiResponse {
+        return $this->patchRequest('/api/v1/questions', [
             'id' => $id,
             'wasViewed' => $wasViewed,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -177,18 +171,16 @@ class Questions extends AbstractEndpoint
      * @param string $id         Идентификатор вопроса
      * @param string $answerText Текст ответа
      *
-     * @return bool true - успешно, false - неудача
+     * @return ApiResponse
      */
-    public function sendAnswer(string $id, string $answerText): bool
-    {
-        $response = $this->patchResponse('/api/v1/questions', [
+    public function sendAnswer(string $id, string $answerText): ApiResponse {
+        return $this->patchRequest('/api/v1/questions', [
             'id' => $id,
             'answer' => (object)[
                 'text' => $answerText,
             ],
             'state' => 'wbRu',
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -199,18 +191,16 @@ class Questions extends AbstractEndpoint
      * @param string $id         Идентификатор вопроса
      * @param string $answerText Текст ответа
      *
-     * @return bool true - успешно, false - неудача
+     * @return ApiResponse
      */
-    public function reject(string $id, string $answerText): bool
-    {
-        $response = $this->patchResponse('/api/v1/questions', [
+    public function reject(string $id, string $answerText): ApiResponse {
+        return $this->patchRequest('/api/v1/questions', [
             'id' => $id,
             'answer' => (object)[
                 'text' => $answerText,
             ],
             'state' => 'none',
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -218,13 +208,12 @@ class Questions extends AbstractEndpoint
      *
      * @param string $id Идентификатор вопроса
      *
-     * @return object {
+     * @return ApiResponse
      * 	    data: object,
      * 	    error: bool, errorText: string, additionalErrors: any
      * }
      */
-    public function get(string $id): object
-    {
+    public function get(string $id): ApiResponse {
         return $this->getRequest('/api/v1/question', [
             'id' => $id,
         ]);

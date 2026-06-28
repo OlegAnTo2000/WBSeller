@@ -22,6 +22,7 @@ class SuppliesTest extends TestCase
     public function test_ping()
     {
         $result = $this->API()->Supplies()->ping();
+        $result = $this->decodeResponse($result);
         var_dump($result);
         $this->assertEquals('OK', $result->Status);
     }
@@ -32,6 +33,7 @@ class SuppliesTest extends TestCase
     public function test_coefficients()
     {
         $result = $this->API()->Supplies()->coefficients();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result);
     }
@@ -44,6 +46,7 @@ class SuppliesTest extends TestCase
         $result = $this->API()->Supplies()->options([
             ['quantity' => 1, 'barcode' => '123456']
         ]);
+        $result = $this->decodeResponse($result);
 
         $this->assertTrue(property_exists($result, 'requestId'));
         $this->assertEquals('123456', $result->result[0]->barcode);
@@ -55,6 +58,7 @@ class SuppliesTest extends TestCase
     public function test_warehouses()
     {
         $result = $this->API()->Supplies()->warehouses();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result);
         $this->assertTrue(count($result) > 0);

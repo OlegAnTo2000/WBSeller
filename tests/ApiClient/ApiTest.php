@@ -61,6 +61,7 @@ class ApiTest extends TestCase
     {
         $Content = $this->Content();
         $result = $Content->ping();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsObject($result);
         $this->assertTrue(property_exists($result, 'Status'));

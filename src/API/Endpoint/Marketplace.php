@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\CrossBorder;
 use Dakword\WBSeller\API\Endpoint\Subpoint\DBS;
@@ -63,12 +65,11 @@ class Marketplace extends AbstractEndpoint
      * @param int $next  Параметр пагинации. Устанавливает значение, с которого надо получить следующий пакет данных.
      *                   Для получения полного списка данных должен быть равен 0 в первом запросе.
      *
-     * @return object {next: int, supplies: [ object, ...]}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых данных
      */
-    public function getSuppliesList(int $limit = 1_000, int $next = 0): object
-    {
+    public function getSuppliesList(int $limit = 1_000, int $next = 0): ApiResponse {
         $maxLimit = 1_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых данных: {$maxLimit}");
@@ -81,12 +82,11 @@ class Marketplace extends AbstractEndpoint
      *
      * @param string $name Наименование поставки
      *
-     * @return object Объект с идентификатором поставки {id: string}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимальной длинны наименования поставки
      */
-    public function createSupply(string $name = ''): object
-    {
+    public function createSupply(string $name = ''): ApiResponse {
         $maxLength = 128;
         if (mb_strlen($name) > $maxLength) {
             throw new InvalidArgumentException("Превышение максимальной длинны наименования поставки: {$maxLength}");
@@ -99,10 +99,9 @@ class Marketplace extends AbstractEndpoint
      *
      * @param string $supplyId Идентификатор поставки
      *
-     * @return object
+     * @return ApiResponse
      */
-    public function getSupply(string $supplyId): object
-    {
+    public function getSupply(string $supplyId): ApiResponse {
         return $this->getRequest('/api/v3/supplies/' . $supplyId);
     }
 
@@ -113,8 +112,7 @@ class Marketplace extends AbstractEndpoint
      *
      * @param string $supplyId Идентификатор поставки
      */
-    public function deleteSupply(string $supplyId)
-    {
+    public function deleteSupply(string $supplyId): ApiResponse {
         return $this->deleteRequest('/api/v3/supplies/' . $supplyId);
     }
 
@@ -123,10 +121,9 @@ class Marketplace extends AbstractEndpoint
      *
      * @param string $supplyId Идентификатор поставки
      *
-     * @return object {orders: [object, ...]}
+     * @return ApiResponse
      */
-    public function getSupplyOrders(string $supplyId): object
-    {
+    public function getSupplyOrders(string $supplyId): ApiResponse {
         return $this->getRequest('/api/v3/supplies/' . $supplyId . '/orders');
     }
 
@@ -142,10 +139,9 @@ class Marketplace extends AbstractEndpoint
      * @param string $supplyId Идентификатор поставки
      * @param int    $orderId  Идентификатор сборочного задания
      *
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
      */
-    public function addSupplyOrder(string $supplyId, int $orderId)
-    {
+    public function addSupplyOrder(string $supplyId, int $orderId): ApiResponse {
         return $this->patchRequest('/api/v3/supplies/' . $supplyId . '/orders/' . $orderId);
     }
 
@@ -158,10 +154,9 @@ class Marketplace extends AbstractEndpoint
      *
      * @param string $supplyId Идентификатор поставки
      *
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
      */
-    public function closeSupply(string $supplyId)
-    {
+    public function closeSupply(string $supplyId): ApiResponse {
         return $this->patchRequest('/api/v3/supplies/' . $supplyId . '/deliver');
     }
 
@@ -170,11 +165,10 @@ class Marketplace extends AbstractEndpoint
      *
      * Возвращает все сборочные задания, требующие повторной отгрузки.
      *
-     * @return object (orders: [object, ...])
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
+     * @return ApiResponse
      */
-    public function getReShipmentOrdersSupplies(): object
-    {
+    public function getReShipmentOrdersSupplies(): ApiResponse {
         return $this->getRequest('/api/v3/supplies/orders/reshipment');
     }
 
@@ -187,12 +181,11 @@ class Marketplace extends AbstractEndpoint
      * @param string $supplyId Идентификатор поставки
      * @param string $type     Формат штрихкода ("svg", "zplv", "zplh", "png")
      *
-     * @return object {barcode: string, file: string}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный формат штрихкода
      */
-    public function getSupplyBarcode(string $supplyId, string $type): object
-    {
+    public function getSupplyBarcode(string $supplyId, string $type): ApiResponse {
         if (!in_array($type, ['svg', 'zplv', 'zplh', 'png'])) {
             throw new InvalidArgumentException('Неизвестный формат штрихкода: ' . $type);
         }
@@ -206,10 +199,9 @@ class Marketplace extends AbstractEndpoint
      *
      * @param int $orderId Идентификатор сборочного задания
      *
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
      */
-    public function cancelOrder(int $orderId)
-    {
+    public function cancelOrder(int $orderId): ApiResponse {
         return $this->patchRequest('/api/v3/orders/' . $orderId . '/cancel');
     }
 
@@ -222,13 +214,12 @@ class Marketplace extends AbstractEndpoint
      *
      * @param array $orders Список идентификаторов сборочных заданий
      *
-     * @return object (orders: [{id: int, supplierStatus: string, wbStatus: string}, ...])
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых статусов сборочных заданий
      */
-    public function getOrdersStatuses(array $orders): object
-    {
+    public function getOrdersStatuses(array $orders): ApiResponse {
         $maxCount = 1_000;
         if (count($orders) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых статусов сборочных заданий: {$maxCount}");
@@ -250,12 +241,11 @@ class Marketplace extends AbstractEndpoint
      *                            по умолчанию — дата за 30 дней до запроса
      * @param ?DateTime $dateEnd   По какую дату вернуть сборочные задания (заказы)
      *
-     * @return object {next: int, orders: [object, ...]}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение значения параметра limit
      */
-    public function getOrders(int $limit = 1_000, int $next = 0, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): object
-    {
+    public function getOrders(int $limit = 1_000, int $next = 0, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): ApiResponse {
         $maxLimit = 1_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых строк: {$maxLimit}");
@@ -272,10 +262,9 @@ class Marketplace extends AbstractEndpoint
      *
      * Возвращает список всех новых сборочных заданий у продавца на данный момент.
      *
-     * @return object {orders: [object, ...]}
+     * @return ApiResponse
      */
-    public function getNewOrders(): object
-    {
+    public function getNewOrders(): ApiResponse {
         return $this->getRequest('/api/v3/orders/new');
     }
 
@@ -287,14 +276,12 @@ class Marketplace extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества элементов переданного массива
      */
-    public function setOrderKiz(int $orderId, array $sgtin): bool
-    {
+    public function setOrderKiz(int $orderId, array $sgtin): ApiResponse {
         $maxCount = 24;
         if (count($sgtin) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества элементов переданного массива: {$maxCount}");
         }
-        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
-        return $response->statusCode === 204;
+        return $this->putRequest('/api/v3/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
     }
 
     /**
@@ -307,12 +294,10 @@ class Marketplace extends AbstractEndpoint
      * @param int    $orderId Идентификатор сборочного задания
      * @param string $uin     УИН (16 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function setOrderUin(int $orderId, string $uin): bool
-    {
-        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
-        return $response->statusCode === 204;
+    public function setOrderUin(int $orderId, string $uin): ApiResponse {
+        return $this->putRequest('/api/v3/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
     }
 
     /**
@@ -325,12 +310,10 @@ class Marketplace extends AbstractEndpoint
      * @param int    $orderId Идентификатор сборочного задания
      * @param string $imei    IMEI (15 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function setOrderIMEI(int $orderId, string $imei): bool
-    {
-        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
-        return $response->statusCode === 204;
+    public function setOrderIMEI(int $orderId, string $imei): ApiResponse {
+        return $this->putRequest('/api/v3/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
     }
 
     /**
@@ -343,12 +326,10 @@ class Marketplace extends AbstractEndpoint
      * @param int    $orderId Идентификатор сборочного задания
      * @param string $gtin    УИН (13 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function setOrderGTIN(int $orderId, string $gtin): bool
-    {
-        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
-        return $response->statusCode === 204;
+    public function setOrderGTIN(int $orderId, string $gtin): ApiResponse {
+        return $this->putRequest('/api/v3/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
     }
 
     /**
@@ -358,10 +339,9 @@ class Marketplace extends AbstractEndpoint
      *
      * @param int $orderId Идентификатор сборочного задания
      *
-     * @return object {meta: {imei: string, uin: string, gtin: string}}
+     * @return ApiResponse
      */
-    public function getOrderMeta(int $orderId): object
-    {
+    public function getOrderMeta(int $orderId): ApiResponse {
         return $this->getRequest('/api/v3/orders/' . $orderId . '/meta');
     }
 
@@ -371,19 +351,17 @@ class Marketplace extends AbstractEndpoint
      * @param int     $orderId Идентификатор сборочного задания
      * @param string $key      Название метаданных для удаления (imei, uin, gtin, sgtin)
      *
-     * @return bool
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестное название метаданных
      */
-    public function deleteOrderMeta(int $orderId, string $key): bool
-    {
+    public function deleteOrderMeta(int $orderId, string $key): ApiResponse {
         if (!in_array($key, ['imei', 'uin', 'gtin', 'sgtin'])) {
             throw new InvalidArgumentException('Неизвестное название метаданных: ' . $key);
         }
-        $response = $this->deleteResponse('/api/v3/orders/' . $orderId . '/meta', [
+        return $this->deleteRequest('/api/v3/orders/' . $orderId . '/meta', [
             'key' => $key
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -398,14 +376,13 @@ class Marketplace extends AbstractEndpoint
      * @param string $type     Формат штрихкода ("svg", "zplv", "zplh", "png")
      * @param string $size     Размер этикетки ("40x30", "58x40")
      *
-     * @return object {stickers: [object, ...]}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный формат штрихкода
      * @throws InvalidArgumentException Неизвестный размер этикетки
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых этикеток
      */
-    public function getOrdersStickers(array $orderIds, string $type, string $size): object
-    {
+    public function getOrdersStickers(array $orderIds, string $type, string $size): ApiResponse {
         $maxCount = 100;
         if (count($orderIds) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых этикеток: {$maxCount}");
@@ -429,8 +406,7 @@ class Marketplace extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества обновляемых остатков
      */
-    public function updateWarehouseStocks(int $warehouseId, array $stocks)
-    {
+    public function updateWarehouseStocks(int $warehouseId, array $stocks): ApiResponse {
         $maxCount = 1_000;
         if (count($stocks) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества обновляемых остатков: {$maxCount}");
@@ -448,8 +424,7 @@ class Marketplace extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества удаляемых остатков
      */
-    public function deleteWarehouseStocks(int $warehouseId, array $skus)
-    {
+    public function deleteWarehouseStocks(int $warehouseId, array $skus): ApiResponse {
         $maxCount = 1_000;
         if (count($skus) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества удаляемых остатков: {$maxCount}");
@@ -463,12 +438,11 @@ class Marketplace extends AbstractEndpoint
      * @param int   $warehouseId Идентификатор склада продавца
      * @param array $skus        Массив баркодов (не более 1000)
      *
-     * @return object {stocks: [object, ...]}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых остатков
      */
-    public function getWarehouseStocks(int $warehouseId, array $skus)
-    {
+    public function getWarehouseStocks(int $warehouseId, array $skus): ApiResponse {
         $maxCount = 1_000;
         if (count($skus) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых остатков: {$maxCount}");
@@ -481,10 +455,9 @@ class Marketplace extends AbstractEndpoint
      *
      * @param string $supplyId Идентификатор поставки
      *
-     * @return object {trbxes: [object, ...]}
+     * @return ApiResponse
      */
-    public function getSupplyBoxes(string $supplyId): object
-    {
+    public function getSupplyBoxes(string $supplyId): ApiResponse {
         return $this->getRequest('/api/v3/supplies/' . $supplyId . '/trbx');
     }
 
@@ -497,12 +470,11 @@ class Marketplace extends AbstractEndpoint
      * @param string $supplyId Идентификатор поставки
      * @param int    $amount   Количество коробов, которые необходимо добавить к поставке
      *
-     * @return object {trbxIds: [string, ...]}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException ревышение максимального количества добавляемых коробов
      */
-    public function addSupplyBoxes(string $supplyId, int $amount = 1): object
-    {
+    public function addSupplyBoxes(string $supplyId, int $amount = 1): ApiResponse {
         $maxCount = 1_000;
         if ($amount > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества добавляемых коробов: {$maxCount}");
@@ -519,12 +491,10 @@ class Marketplace extends AbstractEndpoint
      * @param string $supplyId Идентификатор поставки
      * @param array  $boxeIds Список ID коробов, которые необходимо удалить
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function deleteSupplyBoxes(string $supplyId, array $boxeIds): bool
-    {
-        $response = $this->deleteResponse('/api/v3/supplies/' . $supplyId . '/trbx', ['trbxIds' => $boxeIds]);
-        return $response->statusCode === 204;
+    public function deleteSupplyBoxes(string $supplyId, array $boxeIds): ApiResponse {
+        return $this->deleteRequest('/api/v3/supplies/' . $supplyId . '/trbx', ['trbxIds' => $boxeIds]);
     }
 
     /**
@@ -537,12 +507,10 @@ class Marketplace extends AbstractEndpoint
      * @param string $boxId    ID короба
      * @param array  $orderIds Список заказов, которые необходимо добавить в короб
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function addBoxOrders(string $supplyId, string $boxId, array $orderIds): bool
-    {
-        $response = $this->patchResponse('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId, ['orderIds' => $orderIds]);
-        return $response->statusCode === 204;
+    public function addBoxOrders(string $supplyId, string $boxId, array $orderIds): ApiResponse {
+        return $this->patchRequest('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId, ['orderIds' => $orderIds]);
     }
 
     /**
@@ -555,12 +523,10 @@ class Marketplace extends AbstractEndpoint
      * @param string $boxId    ID короба
      * @param int    $orderId  ID сборочного задания
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function deleteBoxOrder(string $supplyId, string $boxId, int $orderId): bool
-    {
-        $response = $this->deleteResponse('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId . '/orders/' . $orderId);
-        return $response->statusCode === 204;
+    public function deleteBoxOrder(string $supplyId, string $boxId, int $orderId): ApiResponse {
+        return $this->deleteRequest('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId . '/orders/' . $orderId);
     }
 
     /**
@@ -574,12 +540,11 @@ class Marketplace extends AbstractEndpoint
      * @param array  $boxIds   Список ID коробов, по которым необходимо вернуть стикеры
      * @param string $type     Формат штрихкода ("svg", "zplv", "zplh", "png")
      *
-     * @return object {stickers: {}}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный формат штрихкода
      */
-    public function getSupplyBoxStickers(string $supplyId, array $boxIds, string $type = 'svg')
-    {
+    public function getSupplyBoxStickers(string $supplyId, array $boxIds, string $type = 'svg'): ApiResponse {
         if (!in_array($type, ['svg', 'zplv', 'zplh', 'png'])) {
             throw new InvalidArgumentException('Неизвестный формат штрихкода: ' . $type);
         }

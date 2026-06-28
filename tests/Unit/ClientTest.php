@@ -8,6 +8,7 @@ use Dakword\WBSeller\API\Client;
 use Dakword\WBSeller\Enum\HttpMethod;
 use Dakword\WBSeller\Exception\ApiClientException;
 use Dakword\WBSeller\Exception\ApiTransportException;
+use Dakword\WBSeller\Exception\ApiResponseDecodingException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -28,7 +29,6 @@ class ClientTest extends TestCase
             'boolean scalar' => ['true', true],
             'JSON null' => ['null', null],
             'empty body' => ['', null],
-            'invalid JSON' => ['not-json', 'not-json'],
         ];
     }
 
@@ -39,8 +39,8 @@ class ClientTest extends TestCase
 
         $response = $client->request(HttpMethod::GET, '/test');
 
-        self::assertEquals($expected, $response->body);
-        self::assertSame($body, $response->rawBody);
+        self::assertEquals($expected, $response->json());
+        self::assertSame($body, $response->text());
     }
 
     public function testMockHandlerDoesNotRequireNetworkOrRealApiKey(): void
@@ -49,7 +49,7 @@ class ClientTest extends TestCase
 
         $response = $client->request('GET', '/test');
 
-        self::assertTrue($response->body->ok);
+        self::assertTrue($response->json()->ok);
         self::assertSame(200, $response->statusCode);
     }
 
@@ -83,7 +83,7 @@ class ClientTest extends TestCase
             self::assertSame($body, $exception->rawResponse());
             self::assertSame($message, $exception->getMessage());
             self::assertNotNull($exception->getPrevious());
-            self::assertEquals($decoded, $exception->response()?->body);
+            self::assertEquals($decoded, $exception->responseBody());
         }
     }
 
@@ -103,6 +103,18 @@ class ClientTest extends TestCase
         self::assertSame(7, $response->rateLimit->remaining);
         self::assertSame(29, $response->rateLimit->reset);
         self::assertSame(2, $response->rateLimit->retry);
+        self::assertSame(['10'], $response->header('x-ratelimit-limit'));
+        self::assertSame('10', $response->headerLine('X-RATELIMIT-LIMIT'));
+    }
+
+    public function testInvalidJsonThrowsPackageException(): void
+    {
+        $response = $this->clientWithResponses(new Response(200, [], 'not-json'))
+            ->request('GET', '/test');
+
+        self::assertSame('not-json', $response->text());
+        $this->expectException(ApiResponseDecodingException::class);
+        $response->json();
     }
 
     public function testTransportErrorIsNormalized(): void

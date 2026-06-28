@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\AbstractEndpoint;
 use InvalidArgumentException;
 
@@ -19,7 +21,7 @@ class Recommends extends AbstractEndpoint
      * @param array $nmIds Идентификаторы товаров, для которых необходимо получить список рекомендаций (max. 200)
      * @param int   $limit Ограничение количества рекомендованных nm в ответе (max. 999)
      *
-     * @return array !!! РЕСТРУКТУРИРОВАННЫЙ ОТВЕТ
+     * @return ApiResponse
      *               [
      *                  nmId => [recomNm1, recomNm2, ...],
      *                  ...
@@ -28,8 +30,7 @@ class Recommends extends AbstractEndpoint
      * @throws InvalidArgumentException Превышение максимального количества переданных идентификаторов
      * @throws InvalidArgumentException Превышение максимального значения параметра limit
      */
-    public function list(array $nmIds, int $limit = 0): array
-    {
+    public function list(array $nmIds, int $limit = 0): ApiResponse {
         $maxCount = 200;
         if (count($nmIds) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества переданных идентификаторов: {$maxCount}");
@@ -38,11 +39,7 @@ class Recommends extends AbstractEndpoint
         if ($limit >  $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального значения параметра limit: {$maxLimit}");
         }
-        $result = $this->postRequest('/api/v1/list', $nmIds, ['limit' => $limit]);
-        return array_reduce($result->data, function ($result, $item) {
-            $result[$item->nm] = $item->list;
-            return $result;
-        });
+        return $this->postRequest('/api/v1/list', $nmIds, ['limit' => $limit]);
     }
 
     /**
@@ -55,10 +52,9 @@ class Recommends extends AbstractEndpoint
      *                     [nmId1, nmId2, ...] - Список идентификаторов товаров,
      *                                           которые необходимо добавить в рекомендуемые
      *
-     * @return object|string
+     * @return ApiResponse
      */
-    public function add(array $recom)
-    {
+    public function add(array $recom): ApiResponse {
         return $this->postRequest('/api/v1/ins', array_map(
             function ($key, $value) {
                 return ['nm' => (int) $key, 'recom' => $value];
@@ -77,10 +73,9 @@ class Recommends extends AbstractEndpoint
      *                     [nmId1, nmId2, ...] - Список идентификаторов товаров,
      *                                           которые необходимо удалить из рекомендуемых
      *
-     * @return string|object
+     * @return ApiResponse
      */
-    public function delete(array $recom)
-    {
+    public function delete(array $recom): ApiResponse {
         return $this->postRequest('/api/v1/del', array_map(
             function ($key, $value) {
                 return ['nm' => (int) $key, 'recom' => $value];
@@ -101,10 +96,9 @@ class Recommends extends AbstractEndpoint
      *                     [nmId1, nmId2, ...] - Список идентификаторов товаров,
      *                                           которые необходимо передать в рекомендуемые
      *
-     * @return string|object
+     * @return ApiResponse
      */
-    public function update(array $recom)
-    {
+    public function update(array $recom): ApiResponse {
         return $this->postRequest('/api/v1/set', array_map(
             function ($key, $value) {
                 return ['nm' => (int) $key, 'recom' => $value];

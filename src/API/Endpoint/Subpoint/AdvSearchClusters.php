@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Adv;
 use DateTime;
 use InvalidArgumentException;
@@ -27,7 +29,7 @@ class AdvSearchClusters
 	 * @param DateTime $dateTo Конец периода
 	 * @param array<int, array<int, int>> $items Идентификаторы кампаний и товаров {advertId: int, nmId: int}
 	 *
-	 * @return object Статистика поисковых кластеров {"stats": [{
+	 * @return ApiResponse
 	 *     "advert_id": 1825035,
 	 *     "nm_id": 983512347,
 	 *     "stats": [
@@ -45,18 +47,13 @@ class AdvSearchClusters
 	 *     ]
 	 * }, ...]}
 	 */
-	public function normqueryStats(DateTime $dateFrom, DateTime $dateTo, array $items): object
-	{
+	public function normqueryStats(DateTime $dateFrom, DateTime $dateTo, array $items): ApiResponse {
 		$body = [
 			'from'  => $dateFrom->format('Y-m-d'),
 			'to'    => $dateTo->format('Y-m-d'),
 			'items' => $items,
 		];
-		$result = $this->Adv->postRequest('/adv/v0/normquery/stats', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->postRequest('/adv/v0/normquery/stats', $body);
 	}
 
 	/**
@@ -69,7 +66,7 @@ class AdvSearchClusters
 	 * @param DateTime $dateTo Конец периода
 	 * @param array<int, array<int, int>> $items Идентификаторы кампаний и товаров, не более 100 {advertId: int, nmId: int}
 	 *
-	 * @return object Статистика поисковых кластеров {
+	 * @return ApiResponse
    *  "items": [
    *    {
    *      "advertId": 123456789,
@@ -132,7 +129,7 @@ class AdvSearchClusters
 		DateTime $dateFrom, 
 		DateTime $dateTo, 
 		array $items
-	): object {
+	): ApiResponse {
 		if (empty($items)) throw new InvalidArgumentException("Массив items не должен быть пустым");
 		if (count($items) > 100) throw new InvalidArgumentException("Превышено максимальное количество элементов в items: 100");
 		$interval = $dateFrom->diff($dateTo);
@@ -142,11 +139,7 @@ class AdvSearchClusters
 			'to'    => $dateTo->format('Y-m-d'),
 			'items' => $items,
 		];
-		$result = $this->Adv->postRequest('/adv/v1/normquery/stats', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->postRequest('/adv/v1/normquery/stats', $body);
 	}
 
 	/**
@@ -156,7 +149,7 @@ class AdvSearchClusters
 	 * @link https://dev.wildberries.ru/openapi/promotion/#tag/Poiskovye-klastery/paths/~1adv~1v0~1normquery~1get-bids/post
 	 *
 	 * @param array<int, array<int, int>> $items Идентификаторы кампаний и товаров {advertId: int, nmId: int}
-	 * @return object Список ставок поисковых кластеров {
+	 * @return ApiResponse
 	 * "bids": [{
 	 *   "advert_id": 1825035,
 	 *   "bid": 700,
@@ -165,16 +158,11 @@ class AdvSearchClusters
 	 * }, ...]
 	 * }
 	 */
-	public function normqueryGetBids(array $items): object
-	{
+	public function normqueryGetBids(array $items): ApiResponse {
 		$body = [
 			'items' => $items,
 		];
-		$result = $this->Adv->postRequest('/adv/v0/normquery/get-bids', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->postRequest('/adv/v0/normquery/get-bids', $body);
 	}
 
 	/**
@@ -190,18 +178,13 @@ class AdvSearchClusters
 	 *   "bid": 1000
 	 * }, ...]
 	 * 
-	 * @return object
+	 * @return ApiResponse
 	 */
-	public function normquerySetBids(array $bids): object
-	{
+	public function normquerySetBids(array $bids): ApiResponse {
 		$body = [
 			'bids' => $bids,
 		];
-		$result = $this->Adv->postRequest('/adv/v0/normquery/bids', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->postRequest('/adv/v0/normquery/bids', $body);
 	}
 
 	/**
@@ -217,18 +200,13 @@ class AdvSearchClusters
 	 *   "bid": 1000
 	 * }, ...]}
 	 * 
-	 * @return object
+	 * @return ApiResponse
 	 */
-	public function normqueryDeleteBids(array $bids): object
-	{
+	public function normqueryDeleteBids(array $bids): ApiResponse {
 		$body = [
 			'bids' => $bids,
 		];
-		$result = $this->Adv->deleteRequest('/adv/v0/normquery/bids', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->deleteRequest('/adv/v0/normquery/bids', $body);
 	}
 
 	/**
@@ -242,7 +220,7 @@ class AdvSearchClusters
 	 *   "nm_id": 983512347
 	 * }, ...]
 	 * 
-	 * @return object {
+	 * @return ApiResponse
 	 * "items": [{
 	 *   "advert_id": 1825035,
 	 *   "nm_id": 983512347,
@@ -250,16 +228,11 @@ class AdvSearchClusters
 	 * }, ...]
 	 * }
 	 */
-	public function normqueryGetMinus(array $items): object
-	{
+	public function normqueryGetMinus(array $items): ApiResponse {
 		$body = [
 			'items' => $items,
 		];
-		$result = $this->Adv->postRequest('/adv/v0/normquery/get-minus', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->postRequest('/adv/v0/normquery/get-minus', $body);
 	}
 
 	/**
@@ -272,16 +245,14 @@ class AdvSearchClusters
 	 * @param int $nm_id Идентификатор товара
 	 * @param array<string> $norm_queries Минус-фразы
 	 * 
-	 * @return bool
+	 * @return ApiResponse
 	 */
-	public function normquerySetMinus(int $advert_id, int $nm_id, array $norm_queries): bool
-	{
-		$response = $this->Adv->postResponse('/adv/v0/normquery/set-minus', [
+	public function normquerySetMinus(int $advert_id, int $nm_id, array $norm_queries): ApiResponse {
+		return $this->Adv->postRequest('/adv/v0/normquery/set-minus', [
 			'advert_id'    => $advert_id,
 			'nm_id'        => $nm_id,
 			'norm_queries' => $norm_queries,
 		]);
-		return $response->statusCode === 200;
 	}
 
 	/**
@@ -295,7 +266,7 @@ class AdvSearchClusters
 	 *   "nmId": 983512347
 	 * }, ...]
 	 * 
-	 * @return object {
+	 * @return ApiResponse
 	 * "items": [{
 	 *   "advertId": 1825035,
 	 *   "nmId": 983512347,
@@ -303,14 +274,10 @@ class AdvSearchClusters
 	 * }, ...]
 	 * }
 	 */
-	public function normqueryList(array $items) : object {
+	public function normqueryList(array $items): ApiResponse {
 		$body = [
 			'items' => $items,
 		];
-		$result = $this->Adv->postRequest('/adv/v0/normquery/list', $body);
-		if (isset($result->status) && $result->status !== 200) {
-			$result->request_body = $body;
-		}
-		return $result ?? (object) [];
+		return $this->Adv->postRequest('/adv/v0/normquery/list', $body);
 	}
 }

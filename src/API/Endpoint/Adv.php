@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use DateTime;
 use InvalidArgumentException;
 use Dakword\WBSeller\Enum\AdvertType;
@@ -11,7 +13,6 @@ use Dakword\WBSeller\Enum\AdvertStatus;
 use Dakword\WBSeller\API\AbstractEndpoint;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvAuto;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvFinance;
-use Dakword\WBSeller\DTOs\AdvV2SeacatSaveAdResponseDTO;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchCatalog;
 use Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchClusters;
 
@@ -77,11 +78,10 @@ class Adv extends AbstractEndpoint
      * Допускается 5 запросов в секунду.
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Prodvizhenie/paths/~1adv~1v1~1promotion~1count/get
      *
-     * @return array Данные по кампаниям
+     * @return ApiResponse
      */
-    public function advertsList(): array
-    {
-        return $this->getRequest('/adv/v1/promotion/count')->adverts ?? [];
+    public function advertsList(): ApiResponse {
+        return $this->getRequest('/adv/v1/promotion/count');
     }
 
     /**
@@ -108,7 +108,7 @@ class Adv extends AbstractEndpoint
         ?array $ids, 
         ?array $statuses, 
         ?string $paymentType
-    ) {
+    ): ApiResponse {
         $data = [];
         
         if ($ids) $data['ids']                  = implode(',', $ids);
@@ -133,7 +133,7 @@ class Adv extends AbstractEndpoint
         array $nmIds,
         string $paymentType, 
         array $placementTypes,
-    ) {
+    ): ApiResponse {
         if (empty($nmIds)) {
             throw new InvalidArgumentException("Не переданы номенклатуры товаров");
         }
@@ -162,14 +162,12 @@ class Adv extends AbstractEndpoint
      *
      * @param int $id ID кампании
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function delete(int $id): bool
-    {
-        $response = $this->getResponse('/adv/v0/delete', [
+    public function delete(int $id): ApiResponse {
+        return $this->getRequest('/adv/v0/delete', [
             'id' => $id,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -198,7 +196,7 @@ class Adv extends AbstractEndpoint
         string $bid_type = 'manual', 
         string $payment_type = 'cpm', 
         array $placement_types = ["search"]
-    ) {
+    ): ApiResponse {
         if (count($nms) > 50) {
             throw new InvalidArgumentException("Превышение максимального количества номенклатур в запросе: 50");
         }
@@ -216,8 +214,7 @@ class Adv extends AbstractEndpoint
         ];
         if ($bid_type == 'manual') $data['placement_types'] = $placement_types;
 
-        $response = $this->postRequest('/adv/v2/seacat/save-ad', $data);
-        return AdvV2SeacatSaveAdResponseDTO::fromObject($response);
+        return $this->postRequest('/adv/v2/seacat/save-ad', $data);
     }
 
     /**
@@ -226,15 +223,13 @@ class Adv extends AbstractEndpoint
      * @param int $advertId Идентификатор РК, у которой меняется название
      * @param string $name     Новое название (максимум 100 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function renameAdvert(int $advertId, string $name): bool
-    {
-        $response = $this->postResponse('/adv/v0/rename', [
+    public function renameAdvert(int $advertId, string $name): ApiResponse {
+        return $this->postRequest('/adv/v0/rename', [
             'advertId' => $advertId,
             'name' => mb_substr($name, 0, 100)
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -245,14 +240,13 @@ class Adv extends AbstractEndpoint
      * @param string $order     Порядок: "create", "change", "id"
      * @param string $direction Направление: "desc", "asc"
      *
-     * @return array
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный статус РК
      * @throws InvalidArgumentException Неизвестный тип РК
      * @throws InvalidArgumentException Неизвестный порядок сортировки
      */
-    public function advertsInfo(int $status, int $type, string $order = 'change', string $direction = 'desc'): array
-    {
+    public function advertsInfo(int $status, int $type, string $order = 'change', string $direction = 'desc'): ApiResponse {
         if (AdvertStatus::tryFrom($status) === null) {
             throw new InvalidArgumentException('Неизвестный статус РК: ' . $status);
         }
@@ -273,16 +267,15 @@ class Adv extends AbstractEndpoint
      * 
      * @deprecated Будет удален с 2026-02-02
      * @param array $ids Список ID кампаний. Максимум 50
-     * @return array
+     * @return ApiResponse
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых кампаний
      */
-    public function advertsInfoByIds(array $ids): array
-    {
+    public function advertsInfoByIds(array $ids): ApiResponse {
         $maxCount = 50;
         if (count($ids) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых кампаний: {$maxCount}");
         }
-        return $this->postRequest('/adv/v1/promotion/adverts', $ids) ?? [];
+        return $this->postRequest('/adv/v1/promotion/adverts', $ids);
     }
 
     /**
@@ -299,21 +292,19 @@ class Adv extends AbstractEndpoint
      *                        (является значением subjectId или setId в зависимости от типа РК)
      * @param int $instrument Тип кампании для изменения ставки в Поиск + Каталог (4 - каталог, 6 - поиск)
      *
-     * @return bool
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Недопустимый тип РК
      */
-    public function updateCpm(int $advertId, int $type, int $cpm, int $param, int $instrument): bool
-    {
+    public function updateCpm(int $advertId, int $type, int $cpm, int $param, int $instrument): ApiResponse {
         $this->checkType($type, [AdvertType::ON_CARD->value, AdvertType::ON_SEARCH->value, AdvertType::ON_HOME_RECOM->value]);
-        $response = $this->postResponse('/adv/v0/cpm', [
+        return $this->postRequest('/adv/v0/cpm', [
             'advertId'   => $advertId,
             'type'       => $type,
             'cpm'        => $cpm,
             'param'      => $param,
             'instrument' => $instrument,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -321,12 +312,10 @@ class Adv extends AbstractEndpoint
      *
      * @param int $id
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function start(int $id): bool
-    {
-        $response = $this->getResponse('/adv/v0/start', ['id' => $id]);
-        return $response->statusCode === 200;
+    public function start(int $id): ApiResponse {
+        return $this->getRequest('/adv/v0/start', ['id' => $id]);
     }
 
     /**
@@ -334,12 +323,10 @@ class Adv extends AbstractEndpoint
      *
      * @param int $id
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function pause(int $id): bool
-    {
-        $response = $this->getResponse('/adv/v0/pause', ['id' => $id]);
-        return $response->statusCode === 200;
+    public function pause(int $id): ApiResponse {
+        return $this->getRequest('/adv/v0/pause', ['id' => $id]);
     }
 
     /**
@@ -347,12 +334,10 @@ class Adv extends AbstractEndpoint
      *
      * @param int $id
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function stop(int $id): bool
-    {
-        $response = $this->getResponse('/adv/v0/stop', ['id' => $id]);
-        return $response->statusCode === 200;
+    public function stop(int $id): ApiResponse {
+        return $this->getRequest('/adv/v0/stop', ['id' => $id]);
     }
 
     /**
@@ -376,7 +361,7 @@ class Adv extends AbstractEndpoint
      */
     public function apiAdvertV1Bids(
         array $bids
-    ) {
+    ): ApiResponse {
         if (empty($bids)) {
             throw new InvalidArgumentException("Не переданы ставки");
         }
@@ -405,7 +390,7 @@ class Adv extends AbstractEndpoint
         int $id,
         array $add,
         array $delete,
-    ) {
+    ): ApiResponse {
         return $this->postRequest('/adv/v1/auto/updatenm?id=' . $id, [
             'add'    => $add,
             'delete' => $delete,
@@ -421,11 +406,11 @@ class Adv extends AbstractEndpoint
      * 
      * @param int $id Идентификатор кампании
      * @link https://dev.wildberries.ru/openapi/promotion/#tag/Parametry-kampanij/paths/~1adv~1v1~1auto~1getnmtoadd/get
-     * @return array Список доступных номенклатур [123, 456, 789, ...]
+     * @return ApiResponse
      */
     public function advV1AutoGetNmToAdd(
         int $id,
-    ): array {
+    ): ApiResponse {
         return $this->getRequest('/adv/v1/auto/getnmtoadd', ['id' => $id]);
     }
 
@@ -445,24 +430,23 @@ class Adv extends AbstractEndpoint
      *   }
      * }, ...]
      * 
-     * @return bool
+     * @return ApiResponse
      * 
      * @throws InvalidArgumentException Не переданы места размещения
      * @throws InvalidArgumentException Превышение максимального количества мест размещения в запросе
      */
     public function advV0AuctionPlacements(
         array $placements
-    ) {
+    ): ApiResponse {
         if (empty($placements)) {
             throw new InvalidArgumentException("Не переданы места размещения");
         }
         if (count($placements) > 50) {
             throw new InvalidArgumentException("Превышение максимального количества мест размещения в запросе: 50");
         }
-        $response = $this->putResponse('/adv/v0/auction/placements', [
+        return $this->putRequest('/adv/v0/auction/placements', [
             'placements' => $placements,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -477,7 +461,7 @@ class Adv extends AbstractEndpoint
      */
     public function apiAdvertV0BidsRecommendations(
         int $advertId, int $nmId
-    ) {
+    ): ApiResponse {
         return $this->getRequest('/api/advert/v0/bids/recommendations', ['advertId' => $advertId, 'nmId' => $nmId]);
     }
 
@@ -495,10 +479,9 @@ class Adv extends AbstractEndpoint
      *                      Запрос с интервалами
      *                      Запрос только с id кампаний
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function statistic(array $params): array
-    {
+    public function statistic(array $params): ApiResponse {
         return $this->postRequest('/adv/v2/fullstats', $params);
     }
 
@@ -510,8 +493,7 @@ class Adv extends AbstractEndpoint
      * Для кампаний в статусах 7, 9 и 11.
      * @link https://dev.wildberries.ru/openapi/promotion#tag/Statistika/paths/~1adv~1v3~1fullstats/get
      */
-    public function statisticV3(array $ids, DateTime|string $beginDate, DateTime|string $endDate): array
-    {
+    public function statisticV3(array $ids, DateTime|string $beginDate, DateTime|string $endDate): ApiResponse {
         return $this->getRequest('/adv/v3/fullstats', [
             'ids'       => implode(',', $ids),
             'beginDate' => $beginDate instanceof DateTime ? $beginDate->format('Y-m-d') : $beginDate,
@@ -532,15 +514,14 @@ class Adv extends AbstractEndpoint
      * @param DateTime $dateFrom Начало периода
      * @param DateTime $dateTo   Конец периода
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function advertStatisticByKeywords(int $id, DateTime $dateFrom, DateTime $dateTo): array
-    {
+    public function advertStatisticByKeywords(int $id, DateTime $dateFrom, DateTime $dateTo): ApiResponse {
         return $this->getRequest('/adv/v0/stats/keywords', [
             'advert_id' => $id,
             'from' => $dateFrom->format('Y-m-d'),
             'to' => $dateTo->format('Y-m-d'),
-        ])->keywords;
+        ]);
     }
 
     /**
@@ -550,10 +531,9 @@ class Adv extends AbstractEndpoint
      * Максимум 1 запрос в 12 секунд.
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Slovari/paths/~1adv~1v1~1supplier~1subjects/get
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function subjects(): array
-    {
+    public function subjects(): ApiResponse {
         return $this->getRequest('/adv/v1/supplier/subjects');
     }
 
@@ -566,10 +546,9 @@ class Adv extends AbstractEndpoint
      *
      * @param array $subjects ID предметов, для которых нужно получить номенклатуры
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function nms(array $subjects = []): array
-    {
+    public function nms(array $subjects = []): ApiResponse {
         return $this->postRequest('/adv/v2/supplier/nms', $subjects);
     }
 
@@ -580,8 +559,7 @@ class Adv extends AbstractEndpoint
      * @deprecated Будет удален с 2026-02-02
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Prodvizhenie/paths/~1adv~1v0~1config/get
      */
-    public function config(): object
-    {
+    public function config(): ApiResponse {
         return $this->getRequest('/adv/v0/config');
     }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Analytics;
 use DateTime;
 
@@ -25,15 +27,13 @@ class PaidStorage
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
      * 
-     * @return string ID задания на генерацию
+     * @return ApiResponse
      */
-    public function makeReport(DateTime $dateFrom, DateTime $dateTo): string
-    {
-        $result = $this->Analitics->getRequest('/api/v1/paid_storage', [
+    public function makeReport(DateTime $dateFrom, DateTime $dateTo): ApiResponse {
+        return $this->Analitics->getRequest('/api/v1/paid_storage', [
             'dateFrom' => $dateFrom->format(DATE_RFC3339),
             'dateTo' => $dateTo->format(DATE_RFC3339),
         ]);
-        return $result->data->taskId;
     }
     
     /**
@@ -44,13 +44,11 @@ class PaidStorage
      * 
      * @param string $task_id ID задания на генерацию
      * 
-     * @return string Статус задания: new - новое, processing - обрабатывается, done -отчёт готов,
+     * @return ApiResponse
      *                                purged - отчёт удалён, canceled -отклонено
      */
-    public function checkReportStatus(string $task_id): string
-    {
-        $result = $this->Analitics->getRequest('/api/v1/paid_storage/tasks/' . $task_id . '/status');
-        return $result->data->status;
+    public function checkReportStatus(string $task_id): ApiResponse {
+        return $this->Analitics->getRequest('/api/v1/paid_storage/tasks/' . $task_id . '/status');
     }
     
     /**
@@ -61,10 +59,9 @@ class PaidStorage
      * 
      * @param string $task_id ID задания на генерацию
 
-     * @return array [object, object, ...]
+     * @return ApiResponse
      */
-    public function getReport(string $task_id): array
-    {
+    public function getReport(string $task_id): ApiResponse {
         return $this->Analitics->getRequest('/api/v1/paid_storage/tasks/' . $task_id . '/download');
     }
 }

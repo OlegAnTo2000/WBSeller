@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Marketplace;
 
 class Passes
@@ -18,20 +20,18 @@ class Passes
     /**
      * Cписок складов, для которых требуется пропуск
      * 
-     * @return array [{id: int, name: string, address: string, ...}, ...]
+     * @return ApiResponse
      */
-    public function offices(): array
-    {
+    public function offices(): ApiResponse {
         return $this->Marketplace->getRequest('/api/v3/passes/offices');
     }
 
     /**
      * Cписок пропусков
      * 
-     * @return array [{object}, ...]
+     * @return ApiResponse
      */
-    public function list(): array
-    {
+    public function list(): ApiResponse {
         return $this->Marketplace->getRequest('/api/v3/passes');
     }
     /**
@@ -45,10 +45,9 @@ class Passes
      * @param string $firstName Имя водителя
      * @param string $lastName  Фамилия водителя
      * 
-     * @return object {id: int}
+     * @return ApiResponse
      */
-    public function create(int $officeId, string $carModel, string $carNumber, string $firstName, string $lastName): object
-    {
+    public function create(int $officeId, string $carModel, string $carNumber, string $firstName, string $lastName): ApiResponse {
         return $this->Marketplace->postRequest('/api/v3/passes', [
             'officeId' => $officeId,
             'carModel' => mb_substr($carModel, 0, 100),
@@ -68,18 +67,16 @@ class Passes
      * @param string $firstName Имя водителя
      * @param string $lastName  Фамилия водителя
      * 
-     * @return bool
+     * @return ApiResponse
      */
-    public function update(int $id, int $officeId, string $carModel, string $carNumber, string $firstName, string $lastName): bool
-    {
-        $response = $this->Marketplace->putResponse('/api/v3/passes/' . $id, [
+    public function update(int $id, int $officeId, string $carModel, string $carNumber, string $firstName, string $lastName): ApiResponse {
+        return $this->Marketplace->putRequest('/api/v3/passes/' . $id, [
             'officeId' => $officeId,
             'carModel' => mb_substr($carModel, 0, 100),
             'carNumber' => $carNumber,
             'firstName' => $firstName,
             'lastName' => $lastName,
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -87,12 +84,10 @@ class Passes
      * 
      * @param int $id ID пропуска
      * 
-     * @return bool
+     * @return ApiResponse
      */
-    public function delete(int $id): bool
-    {
-        $response = $this->Marketplace->deleteResponse('/api/v3/passes/' . $id,);
-        return $response->statusCode === 204;
+    public function delete(int $id): ApiResponse {
+        return $this->Marketplace->deleteRequest('/api/v3/passes/' . $id,);
     }    
     
 }

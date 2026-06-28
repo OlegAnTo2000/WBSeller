@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Common;
 
 class News
@@ -24,13 +26,12 @@ class News
      *
      * @param \DateTime $date Дата, от которой необходимо выдать новости
      *
-     * @return array [object, object, ...]
+     * @return ApiResponse
      */
-    public function fromDate(\DateTime $date): array
-    {
+    public function fromDate(\DateTime $date): ApiResponse {
         return $this->Common->getRequest('/api/communications/v1/news', [
             'from' => $date->format('Y-m-d'),
-        ])->data;
+        ]);
     }
 
     /**
@@ -43,12 +44,11 @@ class News
      *
      * @param int $id ID новости, от которой необходимо выдать новости
      *
-     * @return array [object, object, ...]
+     * @return ApiResponse
      */
-    public function fromId(int $id): array
-    {
+    public function fromId(int $id): ApiResponse {
         return $this->Common->getRequest('/api/communications/v1/news', [
             'fromID' => $id,
-        ])->data;
+        ]);
     }
 }

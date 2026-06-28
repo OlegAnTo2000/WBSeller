@@ -22,6 +22,7 @@ class AnaliticsBannedProductsTest extends TestCase
     public function test_blocked()
     {
         $result = $this->Analitics->BannedProducts()->blocked();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result);
     }
@@ -29,6 +30,7 @@ class AnaliticsBannedProductsTest extends TestCase
     public function test_shadowed()
     {
         $result = $this->Analitics->BannedProducts()->shadowed();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result);
     }

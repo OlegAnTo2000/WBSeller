@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Feedbacks;
 use Dakword\WBSeller\API\Endpoint\Questions;
 use InvalidArgumentException;
@@ -28,13 +30,12 @@ class Templates
     /**
      * Cписок шаблонов
      * 
-     * @return object {
+     * @return ApiResponse
      * 	    data: {templates: [object, ...]},
      * 	    error: bool, errorText: string, additionalErrors: object
      * }
      */
-    public function list(): object
-    {
+    public function list(): ApiResponse {
         return $this->Endpoint->getRequest('/api/v1/templates', ['templateType' => $this->type]);
     }
 
@@ -47,13 +48,12 @@ class Templates
      * @param string $name Название шаблона (от 1 до 100 символов)
      * @param string $text Текст шаблона (от 2 до 1000 символов)
      * 
-     * @return object {
+     * @return ApiResponse
      * 	    data: {id: string},
      * 	    error: bool, errorText: string, additionalErrors: any
      * }
      */
-    public function create(string $name, string $text): object
-    {
+    public function create(string $name, string $text): ApiResponse {
         return $this->Endpoint->postRequest('/api/v1/templates', [
             'name' => mb_substr($name, 0, 200),
             'text' => mb_substr($text, 0, 1000),
@@ -68,13 +68,12 @@ class Templates
      * @param string $name Название шаблона (от 1 до 100 символов)
      * @param string $text Текст шаблона (от 2 до 1000 символов)
      * 
-     * @return object {
+     * @return ApiResponse
      * 	    data: any,
      * 	    error: bool, errorText: string, additionalErrors: any
      * }
      */
-    public function update(string $id, string $name, string $text): object
-    {
+    public function update(string $id, string $name, string $text): ApiResponse {
         return $this->Endpoint->patchRequest('/api/v1/templates', [
             'name' => mb_substr($name, 0, 200),
             'text' => mb_substr($text, 0, 1000),
@@ -87,13 +86,12 @@ class Templates
      * 
      * @param string $id Идентификатор шаблона
      * 
-     * @return object {
+     * @return ApiResponse
      * 	    data: any,
      * 	    error: bool, errorText: string, additionalErrors: any
      * }
      */
-    public function delete(string $id): object
-    {
+    public function delete(string $id): ApiResponse {
         return $this->Endpoint->deleteRequest('/api/v1/templates', ['templateID' => $id]);
     }    
     

@@ -15,6 +15,7 @@ class CommonTest extends TestCase
     public function test_sellerInfo()
     {
         $result = $this->Common()->sellerInfo();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsObject($result);
         $this->assertTrue(property_exists($result, 'name'));

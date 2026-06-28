@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Marketplace;
 use DateTime;
 use InvalidArgumentException;
@@ -22,10 +24,9 @@ class DBS
      * Возвращает список всех новых сборочных заданий у продавца на данный момент.
      * @link https://openapi.wb.ru/marketplace/api/ru/#tag/Sborochnye-zadaniya-(DBS)/paths/~1api~1v3~1dbs~1orders~1new/get
      *
-     * @return object {orders: [object, ...]}
+     * @return ApiResponse
      */
-    public function getNewOrders(): object
-    {
+    public function getNewOrders(): ApiResponse {
         return $this->Marketplace->getRequest('/api/v3/dbs/orders/new');
     }
 
@@ -42,12 +43,11 @@ class DBS
      *                            по умолчанию — дата за 30 дней до запроса
      * @param ?DateTime $dateEnd   По какую дату вернуть сборочные задания (заказы)
      *
-     * @return object {next: int, orders: [object, ...]}
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение значения параметра limit
      */
-    public function getOrders(int $limit = 1_000, int $next = 0, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): object
-    {
+    public function getOrders(int $limit = 1_000, int $next = 0, ?DateTime $dateStart = null, ?DateTime $dateEnd = null): ApiResponse {
         $maxLimit = 1_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых строк: {$maxLimit}");
@@ -69,13 +69,12 @@ class DBS
      *
      * @param array $orders Список идентификаторов сборочных заданий
      *
-     * @return object (orders: [{id: int, supplierStatus: string, wbStatus: string}, ...])
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Превышение максимального количества запрашиваемых статусов сборочных заданий
      */
-    public function getOrdersStatuses(array $orders): object
-    {
+    public function getOrdersStatuses(array $orders): ApiResponse {
         $maxCount = 1_000;
         if (count($orders) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых статусов сборочных заданий: {$maxCount}");
@@ -91,12 +90,10 @@ class DBS
      *
      * @param int $order_id Идентификатор сборочного задания
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function confirm(int $order_id): bool
-    {
-        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/confirm");
-        return $response->statusCode === 204;
+    public function confirm(int $order_id): ApiResponse {
+        return $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/confirm");
     }
 
     /**
@@ -107,12 +104,10 @@ class DBS
      *
      * @param int $order_id Идентификатор сборочного задания
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function deliver(int $order_id): bool
-    {
-        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/deliver");
-        return $response->statusCode === 204;
+    public function deliver(int $order_id): ApiResponse {
+        return $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/deliver");
     }
 
     /**
@@ -123,10 +118,9 @@ class DBS
      *
      * @param int $orderId Идентификатор сборочного задания
      *
-     * @return object В случае ошибки {code: string, message: string}
+     * @return ApiResponse
      */
-    public function cancelOrder(int $orderId)
-    {
+    public function cancelOrder(int $orderId): ApiResponse {
         return $this->Marketplace->patchRequest('/api/v3/dbs/orders/' . $orderId . '/cancel');
     }
 
@@ -138,12 +132,10 @@ class DBS
      *
      * @param int $order_id Идентификатор сборочного задания
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function receive(int $order_id): bool
-    {
-        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/receive");
-        return $response->statusCode === 204;
+    public function receive(int $order_id): ApiResponse {
+        return $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/receive");
     }
 
     /**
@@ -154,12 +146,10 @@ class DBS
      *
      * @param int $order_id Идентификатор сборочного задания
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function reject(int $order_id): bool
-    {
-        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/reject");
-        return $response->statusCode === 204;
+    public function reject(int $order_id): ApiResponse {
+        return $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/reject");
     }
 
     /**
@@ -171,14 +161,12 @@ class DBS
      *
      * @param array $orders Список заказов
      *
-     * @return array Информация по клиенту
+     * @return ApiResponse
      */
-    public function getOrdersClient(array $orders)
-    {
+    public function getOrdersClient(array $orders): ApiResponse {
         return $this->Marketplace->postRequest('/api/v3/dbs/orders/client', [
             'orders' => $orders,
-        ])
-        ->orders;
+        ]);
     }
 
     /**
@@ -189,10 +177,9 @@ class DBS
      *
      * @param int $orderId Идентификатор сборочного задания
      *
-     * @return object {meta: {imei: string, uin: string, gtin: string}}
+     * @return ApiResponse
      */
-    public function getOrderMeta(int $orderId): object
-    {
+    public function getOrderMeta(int $orderId): ApiResponse {
         return $this->Marketplace->getRequest('/api/v3/dbs/orders/' . $orderId . '/meta');
     }
 
@@ -202,19 +189,17 @@ class DBS
      * @param int     $orderId Идентификатор сборочного задания
      * @param string $key      Название метаданных для удаления (imei, uin, gtin, sgtin)
      *
-     * @return bool
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестное название метаданных
      */
-    public function deleteOrderMeta(int $orderId, string $key): bool
-    {
+    public function deleteOrderMeta(int $orderId, string $key): ApiResponse {
         if (!in_array($key, ['imei', 'uin', 'gtin', 'sgtin'])) {
             throw new InvalidArgumentException('Неизвестное название метаданных: ' . $key);
         }
-        $response = $this->Marketplace->deleteResponse('/api/v3/dbs/orders/' . $orderId . '/meta', [
+        return $this->Marketplace->deleteRequest('/api/v3/dbs/orders/' . $orderId . '/meta', [
             'key' => $key
         ]);
-        return $response->statusCode === 204;
     }
 
     /**
@@ -226,14 +211,12 @@ class DBS
      *
      * @throws InvalidArgumentException Превышение максимального количества элементов переданного массива
      */
-    public function setOrderKiz(int $orderId, array $sgtin): bool
-    {
+    public function setOrderKiz(int $orderId, array $sgtin): ApiResponse {
         $maxCount = 24;
         if (count($sgtin) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества элементов переданного массива: {$maxCount}");
         }
-        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
-        return $response->statusCode === 204;
+        return $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
     }
 
     /**
@@ -247,12 +230,10 @@ class DBS
      * @param int    $orderId Идентификатор сборочного задания
      * @param string $uin     УИН (16 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function setOrderUin(int $orderId, string $uin): bool
-    {
-        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
-        return $response->statusCode === 204;
+    public function setOrderUin(int $orderId, string $uin): ApiResponse {
+        return $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
     }
 
     /**
@@ -266,12 +247,10 @@ class DBS
      * @param int    $orderId Идентификатор сборочного задания
      * @param string $imei    IMEI (15 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function setOrderIMEI(int $orderId, string $imei): bool
-    {
-        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
-        return $response->statusCode === 204;
+    public function setOrderIMEI(int $orderId, string $imei): ApiResponse {
+        return $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
     }
 
     /**
@@ -285,12 +264,10 @@ class DBS
      * @param int    $orderId Идентификатор сборочного задания
      * @param string $gtin    УИН (13 символов)
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function setOrderGTIN(int $orderId, string $gtin): bool
-    {
-        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
-        return $response->statusCode === 204;
+    public function setOrderGTIN(int $orderId, string $gtin): ApiResponse {
+        return $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
     }
 
 }

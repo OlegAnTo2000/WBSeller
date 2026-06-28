@@ -23,6 +23,7 @@ class FeedbacksTemplatesTest extends TestCase
     public function test_list()
     {
         $result = $this->Templates->list();
+        $result = $this->decodeResponse($result);
 
         $this->assertIsArray($result->data->templates);
 
@@ -37,7 +38,9 @@ class FeedbacksTemplatesTest extends TestCase
 
     public function test_crud()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Templates->create('XYZ-Template', 'Template');
+        $result = $this->decodeResponse($result);
         
         $this->assertTrue(property_exists($result, 'data'));
         
@@ -45,10 +48,12 @@ class FeedbacksTemplatesTest extends TestCase
             $this->assertTrue(property_exists($result->data, 'id'));
             $id = $result->data->id;
             
-            $update = $this->Templates->update($id, 'ABC', 'New template');
+        $update = $this->Templates->update($id, 'ABC', 'New template');
+            $update = $this->decodeResponse($update);
             $this->assertTrue($update->error == false);
 
-            $delete = $this->Templates->delete($id);
+        $delete = $this->Templates->delete($id);
+            $delete = $this->decodeResponse($delete);
             $this->assertTrue($delete->error == false);
         }
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Analytics;
 
 /**
@@ -39,10 +41,9 @@ class WarehouseRemains
      *                                             null - не применять фильтр
      *                                             true - с фото
      *
-     * @return string ID задания на генерацию
+     * @return ApiResponse
      */
-    public function makeReport(array $groupBy = [], ?int $withVolume = null, ?bool $withPhoto = null): string
-    {
+    public function makeReport(array $groupBy = [], ?int $withVolume = null, ?bool $withPhoto = null): ApiResponse {
         return $this->Analytics->getRequest('/api/v1/warehouse_remains', [
             'locale' => $this->Analytics->locale(),
             'groupByBrand' => in_array('brand', $groupBy),
@@ -53,8 +54,7 @@ class WarehouseRemains
             'groupBySize' => in_array('size', $groupBy),
             'filterVolume' => is_null($withVolume) ? 0 : ($withVolume ? 3 : -1),
             'filterPics' => is_null($withPhoto) ? 0 : ($withPhoto ? 1 : -1),
-        ])
-        ->data->taskId;
+        ]);
     }
 
     /**
@@ -66,17 +66,14 @@ class WarehouseRemains
      *
      * @param string $task_id ID задания на генерацию
      *
-     * @return string Статус задания: new - новое
+     * @return ApiResponse
      *                                processing - обрабатывается
      *                                done - отчёт готов
      *                                purged - отчёт удалён
      *                                canceled - отклонено
      */
-    public function checkReportStatus(string $task_id): string
-    {
-        return $this->Analytics
-            ->getRequest('/api/v1/warehouse_remains/tasks/' . $task_id . '/status')
-        ->data->status;
+    public function checkReportStatus(string $task_id): ApiResponse {
+        return $this->Analytics->getRequest('/api/v1/warehouse_remains/tasks/' . $task_id . '/status');
     }
 
     /**
@@ -88,10 +85,9 @@ class WarehouseRemains
      *
      * @param string $task_id ID задания на генерацию
      *
-     * @return array
+     * @return ApiResponse
      */
-    public function getReport(string $task_id): array
-    {
+    public function getReport(string $task_id): ApiResponse {
         return $this->Analytics
             ->getRequest('/api/v1/warehouse_remains/tasks/' . $task_id . '/download');
     }

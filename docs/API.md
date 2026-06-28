@@ -43,11 +43,23 @@ X-Ratelimit-Limit: 10
 
 ### Ошибки запросов
 
-Все ответы `4xx` и `5xx` представлены `ApiClientException` независимо от того, содержит тело JSON, обычный текст или пустую строку. Статус, декодированное тело, исходное тело и заголовки доступны через `statusCode()`, `responseBody()`, `rawResponse()` и `responseHeaders()`. Исходное Guzzle-исключение сохраняется в `getPrevious()`.
+Все ответы `4xx` и `5xx` представлены `ApiClientException` независимо от того, содержит тело JSON, обычный текст или пустую строку. Исходный `ApiResponse` доступен через `response()`, а исходное Guzzle-исключение — через `getPrevious()`.
 
 Сетевые ошибки и исключения middleware представлены `ApiTransportException`. Все исключения транспорта библиотеки наследуют `WBSellerException`, поэтому для общего обработчика достаточно перехватить этот базовый класс.
 
-`Client::request()` возвращает immutable `ApiResponse`. Он содержит декодированное `body`, исходное `rawBody`, `statusCode`, `reasonPhrase`, `headers` и объект `rateLimit`. При HTTP-ошибке тот же объект доступен через `ApiClientException::response()`. Endpoint сохраняет `lastResponse()` только для совместимости и внешней диагностики; внутренняя логика использует ответ конкретного запроса.
+Все HTTP-методы endpoint возвращают immutable `ApiResponse` без преобразования тела. Исходное тело читается через `text()`, JSON — через `json()`, заголовки — через `header()` и `headerLine()`. Также доступны `isEmpty()`, `isSuccessful()`, `statusCode`, `reasonPhrase`, `headers` и `rateLimit`. Невалидный JSON приводит к `ApiResponseDecodingException`.
+
+#### Миграция на 5.0.0
+
+| Раньше | Теперь |
+| --- | --- |
+| `$data = $endpoint->method()` | `$data = $endpoint->method()->json()` |
+| `$text = $endpoint->method()` | `$text = $endpoint->method()->text()` |
+| `$ok = $endpoint->method()` | `$ok = $endpoint->method()->isSuccessful()` |
+| `$endpoint->responseCode()` | `$response->statusCode` |
+| `$endpoint->responseRate()` | `$response->rateLimit` |
+
+Методы `lastResponse()`, `responseCode()`, `response()`, `responsePhrase()`, `responseHeaders()`, `rawResponse()` и `responseRate()` удалены. Ответ конкретного запроса необходимо сохранять непосредственно.
 
 Исключения из `request`, `response` и `error` listeners не прерывают HTTP-запрос, но больше не теряются. Их можно получить через `$api->onListenerError($callback)` или секцию `listeners.listener_error`. Если обработчик не зарегистрирован, сообщение записывается через стандартный `error_log()` PHP.
 

@@ -26,7 +26,7 @@ class RetryPolicyTest extends TestCase
 
         $endpoint->retryOnTooManyRequests(2, 0);
 
-        self::assertTrue($endpoint->readByPost()->ok);
+        self::assertTrue($endpoint->readByPost()->json()->ok);
         self::assertCount(0, $mock);
     }
 
@@ -100,23 +100,23 @@ class RetryPolicyTest extends TestCase
 final class RetryPolicyEndpoint extends AbstractEndpoint
 {
     #[Retryable]
-    public function readByPost(): object
+    public function readByPost(): \Dakword\WBSeller\API\Response\ApiResponse
     {
         return $this->postRequest('/read');
     }
 
-    public function writeByPost(): object
+    public function writeByPost(): \Dakword\WBSeller\API\Response\ApiResponse
     {
         return $this->postRequest('/write');
     }
 
     #[NonRetryable]
-    public function unsafeGet(): object
+    public function unsafeGet(): \Dakword\WBSeller\API\Response\ApiResponse
     {
         return $this->getRequest('/unsafe');
     }
 
-    public function readByGet(): object
+    public function readByGet(): \Dakword\WBSeller\API\Response\ApiResponse
     {
         return $this->getRequest('/read');
     }

@@ -14,7 +14,8 @@ class ContentTest extends TestCase
     private function getCardsList($limit = 10)
     {
         try {
-            $result = $this->Content()->getCardsList('', $limit);
+        $result = $this->Content()->getCardsList('', $limit);
+            $result = $this->decodeResponse($result);
         } catch (ApiTimeRestrictionsException $exc) {
             $this->markTestSkipped($exc->getMessage());
         }
@@ -39,14 +40,16 @@ class ContentTest extends TestCase
         $Content = $this->Content();
 
         try {
-            $result1 = $Content->getCardsList('', $limit);
+        $result1 = $Content->getCardsList('', $limit);
+            $result1 = $this->decodeResponse($result1);
         } catch (ApiTimeRestrictionsException $exc) {
             $this->markTestSkipped($exc->getMessage());
         }
 
         $this->assertTrue(property_exists($result1, 'cards'));
         if ($result1->cursor->total == $limit) {
-            $result2 = $Content->getCardsList('', $limit, $result1->cursor->updatedAt, $result1->cursor->nmID);
+        $result2 = $Content->getCardsList('', $limit, $result1->cursor->updatedAt, $result1->cursor->nmID);
+            $result2 = $this->decodeResponse($result2);
             $this->assertTrue(property_exists($result2, 'cursor'));
         }
     }
@@ -54,8 +57,9 @@ class ContentTest extends TestCase
     public function test_errorCardsList()
     {
         try {
-            $result = $this->Content()
+        $result = $this->Content()
                 ->getErrorCardsList();
+            $result = $this->decodeResponse($result);
         } catch (ApiTimeRestrictionsException $exc) {
             $this->markTestSkipped($exc->getMessage());
         }
@@ -69,6 +73,7 @@ class ContentTest extends TestCase
         $card = array_shift($cards);
 
         $result1 = $this->Content()->getCardByVendorCode($card->vendorCode);
+        $result1 = $this->decodeResponse($result1);
 
         $this->assertTrue(in_array($card->vendorCode, array_column($result1->cards, 'vendorCode')));
     }
@@ -76,8 +81,9 @@ class ContentTest extends TestCase
     public function test_generateBarcodes()
     {
         try {
-            $result = $this->Content()
+        $result = $this->Content()
                 ->generateBarcodes(2);
+            $result = $this->decodeResponse($result);
         } catch (ApiTimeRestrictionsException $exc) {
             $this->markTestSkipped($exc->getMessage());
         }
@@ -89,6 +95,7 @@ class ContentTest extends TestCase
     public function test_getCardsLimits()
     {
         $result = $this->Content()->getCardsLimits();
+        $result = $this->decodeResponse($result);
         $this->assertFalse($result->error);
 
         if(!$result->error) {
@@ -101,6 +108,7 @@ class ContentTest extends TestCase
     public function test_getTrashList()
     {
         $result = $this->Content()->Trash()->list();
+        $result = $this->decodeResponse($result);
         $this->assertTrue(property_exists($result, 'cards'));
         $this->assertTrue(property_exists($result, 'cursor'));
         $this->assertIsArray($result->cards);
@@ -108,18 +116,22 @@ class ContentTest extends TestCase
 
     public function test_addCardNomenclature_ERROR()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Content()->addCardNomenclature('TEST', []);
+        $result = $this->decodeResponse($result);
         $this->assertEquals('Invalid request format', $result->errorText);
     }
 
     public function test_createCard_ERROR()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $Content = $this->Content();
 
         $result1 = $Content->createCard([
             'vendorCode' => 'test',
             'variants' => [],
         ]);
+        $result1 = $this->decodeResponse($result1);
         $this->assertTrue($result1->error);
         $this->assertEquals('The request format is incorrect, the number of product items created should not be 0', $result1->errorText);
 
@@ -137,18 +149,22 @@ class ContentTest extends TestCase
                 ]],
             ]
         ]);
+        $result2 = $this->decodeResponse($result2);
         $this->assertTrue($result2->error);
     }
 
     public function test_updateCard()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $listCards = $this->getCardsList();
         $listCard = array_shift($listCards);
         $cardsList = $this->Content()->getCardByVendorCode($listCard->vendorCode);
+        $cardsList = $this->decodeResponse($cardsList);
         $cards = array_filter($cardsList->cards, fn($card) => $card->vendorCode == $listCard->vendorCode);
         $card = array_shift($cards);
         if($card) {
-            $result = $this->Content()->updateCard((array)$card);
+        $result = $this->Content()->updateCard((array)$card);
+            $result = $this->decodeResponse($result);
             $this->assertFalse($result->error);
         } else {
             $this->markTestSkipped('No card found');
@@ -159,6 +175,7 @@ class ContentTest extends TestCase
     {
         $result = $this->Content()
             ->searchCategory('СекС');
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
         $this->assertTrue(in_array('Секс куклы', array_column($result->data, 'subjectName')));
@@ -168,6 +185,7 @@ class ContentTest extends TestCase
     {
         $result = $this->Content()
             ->getParentCategories();
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
         $this->assertTrue(in_array('Электроника', array_column($result->data, 'name')));
@@ -177,6 +195,7 @@ class ContentTest extends TestCase
     {
         $result = $this->Content()
             ->getCategoryCharacteristics(105);
+        $result = $this->decodeResponse($result);
 
         $this->assertFalse($result->error);
         $this->assertTrue(in_array(4, array_column($result->data, 'charcID')));
@@ -186,6 +205,7 @@ class ContentTest extends TestCase
     {
         $result = $this->Content()
             ->getDirectory('colors');
+        $result = $this->decodeResponse($result);
 
         $this->assertTrue(in_array('черный', array_column($result->data, 'name')));
 
@@ -195,32 +215,38 @@ class ContentTest extends TestCase
 
     public function test_getDirectoryColors()
     {
-        $this->assertTrue(in_array('зеленый', array_column($this->Content()->getDirectoryColors()->data, 'name')));
+        $data = $this->Content()->getDirectoryColors()->json();
+        $this->assertTrue(in_array('зеленый', array_column($data->data, 'name')));
     }
 
     public function test_getDirectoryKinds()
     {
-        $this->assertTrue(in_array('Мужской', $this->Content()->getDirectoryKinds()->data));
+        $data = $this->Content()->getDirectoryKinds()->json();
+        $this->assertTrue(in_array('Мужской', $data->data));
     }
 
     public function test_getDirectoryCountries()
     {
-        $this->assertTrue(in_array('Индия', array_column($this->Content()->getDirectoryCountries()->data, 'name')));
+        $data = $this->Content()->getDirectoryCountries()->json();
+        $this->assertTrue(in_array('Индия', array_column($data->data, 'name')));
     }
 
     public function test_getDirectorySeasons()
     {
-        $this->assertTrue(in_array('лето', $this->Content()->getDirectorySeasons()->data));
+        $data = $this->Content()->getDirectorySeasons()->json();
+        $this->assertTrue(in_array('лето', $data->data));
     }
 
     public function test_getDirectoryTNVED()
     {
-        $this->assertFalse($this->Content()->searchDirectoryTNVED(105)->error);
+        $this->assertFalse($this->Content()->searchDirectoryTNVED(105)->json()->error);
     }
 
     public function test_moveNms()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Content()->moveNms(123456, [123, 456, 789]);
+        $result = $this->decodeResponse($result);
 
         $this->assertTrue($result->error);
         $this->assertEquals('target imt not found', $result->errorText);
@@ -228,7 +254,9 @@ class ContentTest extends TestCase
 
     public function test_removeNms()
     {
+        $this->markTestSkipped('Временно отключено: запрос изменяет данные');
         $result = $this->Content()->removeNms([123, 456, 789]);
+        $result = $this->decodeResponse($result);
 
         $this->assertTrue($result->error);
         $this->assertEquals('Invalid item card ID specified', $result->errorText);

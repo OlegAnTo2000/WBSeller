@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use Dakword\WBSeller\API\Endpoint\Adv;
 use Dakword\WBSeller\Enum\MediaAdvertStatus;
 use InvalidArgumentException;
@@ -22,10 +24,9 @@ class AdvMedia
      *
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Media/paths/~1adv~1v1~1count/get
      *
-     * @return object
+     * @return ApiResponse
      */
-    public function count(): object
-    {
+    public function count(): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/count');
     }
 
@@ -36,10 +37,9 @@ class AdvMedia
      *
      * @param int $id Идентификатор медиакампании
      *
-     * @return object
+     * @return ApiResponse
      */
-    public function getAdvert(int $id): object
-    {
+    public function getAdvert(int $id): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/advert', ['id' => $id]);
     }
 
@@ -57,15 +57,14 @@ class AdvMedia
      * @param string $orderDirection Порядок сортировки: desc - от большего к меньшему
      *                                                   asc - от меньшего к большему
      *
-     * @return array
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный статус медиакампании
      * @throws InvalidArgumentException Неизвестный тип медиакампании
      * @throws InvalidArgumentException Неизвестный порядок вывода результатов
      * @throws InvalidArgumentException Неизвестный порядок сортировки результатов
      */
-    public function advertsList(int $status, int $type, int $page, int $limit, string $orderBy = 'create', string $orderDirection = 'desc'): array
-    {
+    public function advertsList(int $status, int $type, int $page, int $limit, string $orderBy = 'create', string $orderDirection = 'desc'): ApiResponse {
         if (MediaAdvertStatus::tryFrom($status) === null) {
             throw new InvalidArgumentException('Неизвестный статус медиакампании: ' . $status);
         }
@@ -106,15 +105,13 @@ class AdvMedia
      * @param int    $id     ID медиакампании
      * @param string $reason Описание причины запуска
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function start(int $id, string $reason = ''): bool
-    {
-        $response = $this->Adv->postResponse('/adv/v1/advert/start', [
+    public function start(int $id, string $reason = ''): ApiResponse {
+        return $this->Adv->postRequest('/adv/v1/advert/start', [
             'advert_id' => $id,
             'reason' => $reason,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -129,15 +126,13 @@ class AdvMedia
      * @param int    $id     ID медиакампании
      * @param string $reason Описание причины приостановки
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function pause(int $id, string $reason = ''): bool
-    {
-        $response = $this->Adv->postResponse('/adv/v1/advert/pause', [
+    public function pause(int $id, string $reason = ''): ApiResponse {
+        return $this->Adv->postRequest('/adv/v1/advert/pause', [
             'advert_id' => $id,
             'reason' => $reason,
         ]);
-        return $response->statusCode === 200;
     }
 
     /**
@@ -150,15 +145,13 @@ class AdvMedia
      * @param int    $id     ID медиакампании
      * @param string $reason Описание причины завершения
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function stop(int $id, string $reason = ''): bool
-    {
-        $response = $this->Adv->postResponse('/adv/v1/advert/stop', [
+    public function stop(int $id, string $reason = ''): ApiResponse {
+        return $this->Adv->postRequest('/adv/v1/advert/stop', [
             'advert_id' => $id,
             'reason' => $reason,
         ]);
-        return $response->statusCode === 200;
     }
 
     /*
@@ -177,12 +170,11 @@ class AdvMedia
      *                      Запрос с интервалами и датами
      *                      Запрос без параметров
      *
-     * @return array
+     * @return ApiResponse
      *
      * @throws InvalidArgumentException Неизвестный тип списания
      */
-    public function statistic(array $params): array
-    {
+    public function statistic(array $params): ApiResponse {
         $maxItems = 100;
         if (count($params) > $maxItems) {
             throw new InvalidArgumentException("Превышение максимального количества переданных элементов: {$maxItems}");
@@ -190,18 +182,15 @@ class AdvMedia
         return $this->Adv->postRequest('/adv/v1/stats', $params);
     }
 
-    public function statisticByIds(array $params): array
-    {
+    public function statisticByIds(array $params): ApiResponse {
         return $this->statistic($params);
     }
 
-    public function statisticByDates(array $params): array
-    {
+    public function statisticByDates(array $params): ApiResponse {
         return $this->statistic($params);
     }
 
-    public function statisticByPeriod(array $params): array
-    {
+    public function statisticByPeriod(array $params): ApiResponse {
         return $this->statistic($params);
     }
 
@@ -223,15 +212,13 @@ class AdvMedia
      * @param int $itemId   ID баннера
      * @param int $cpm      Новая ставка
      *
-     * @return bool
+     * @return ApiResponse
      */
-    public function changeAdvertItemCpm(int $advertId, int $itemId, int $cpm): bool
-    {
-        $response = $this->Adv->postResponse('/adv/v1/item/cpm/change', [
+    public function changeAdvertItemCpm(int $advertId, int $itemId, int $cpm): ApiResponse {
+        return $this->Adv->postRequest('/adv/v1/item/cpm/change', [
             'advert_id' => $advertId,
             'item_id' => $itemId,
             'cpm' => $cpm,
         ]);
-        return $response->statusCode === 200;
     }
 }

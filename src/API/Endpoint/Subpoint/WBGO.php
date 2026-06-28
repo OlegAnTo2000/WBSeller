@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
+
 use InvalidArgumentException;
 use Dakword\WBSeller\API\Endpoint\Marketplace;
 
@@ -24,10 +26,8 @@ class WBGO
      *
      * @param int $order_id Идентификатор сборочного задания
      */
-    public function confirm(int $order_id): bool
-    {
-        $response = $this->Marketplace->patchResponse("/api/v3/orders/{$order_id}/confirm");
-        return $response->statusCode === 204;
+    public function confirm(int $order_id): ApiResponse {
+        return $this->Marketplace->patchRequest("/api/v3/orders/{$order_id}/confirm");
     }
 
     /**
@@ -38,10 +38,8 @@ class WBGO
      *
      * @param int $order_id Идентификатор сборочного задания
      */
-    public function assemble(int $order_id): bool
-    {
-        $response = $this->Marketplace->patchResponse("/api/v3/orders/{$order_id}/assemble");
-        return $response->statusCode === 204;
+    public function assemble(int $order_id): ApiResponse {
+        return $this->Marketplace->patchRequest("/api/v3/orders/{$order_id}/assemble");
     }
 
     /**
@@ -52,10 +50,9 @@ class WBGO
      *
      * @param int $warehouse_id Идентификатор склада продавца
      *
-     * @return object {contacts: [{comment: string, phone: string}, ...]}
+     * @return ApiResponse
      */
-    public function getContacts(int $warehouse_id): object
-    {
+    public function getContacts(int $warehouse_id): ApiResponse {
         return $this->Marketplace->getRequest("/api/v3/warehouses/{$warehouse_id}/contacts");
     }
 
@@ -73,15 +70,13 @@ class WBGO
      *
      * @throws InvalidArgumentException Превышение максимального количества контактов
      */
-    public function updateContacts(int $warehouse_id, array $contacts): bool
-    {
+    public function updateContacts(int $warehouse_id, array $contacts): ApiResponse {
         $maxLimit = 5;
         if (count($contacts) > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества контактов: {$maxLimit}");
         }
-        $response = $this->Marketplace->putResponse("/api/v3/warehouses/{$warehouse_id}/contacts", [
+        return $this->Marketplace->putRequest("/api/v3/warehouses/{$warehouse_id}/contacts", [
             'contacts' => $contacts,
         ]);
-        return $response->statusCode === 204;
     }
 }
