@@ -14,7 +14,7 @@ use Dakword\WBSeller\DTOs\Traits\DtoHelperTrait;
  *
  * @see \Dakword\WBSeller\API\Endpoint\Subpoint\AdvSearchCatalog
  */
-class AdvV2SeacatSaveAdResponseDTO
+final class AdvV2SeacatSaveAdResponseDTO
 {
     use DtoHelperTrait;
 

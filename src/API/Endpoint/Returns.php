@@ -59,13 +59,13 @@ class Returns extends AbstractEndpoint
         if (ReturnAction::tryFrom($action) === null) {
             throw new InvalidArgumentException('Неизвестный ответ на заявку: ' . $action);
         }
-        $this->patchRequest('/api/v1/claim', [
+        $response = $this->patchResponse('/api/v1/claim', [
             'id' => $id,
             'action' => $action,
         ] + ($action === ReturnAction::REJECT_CUSTOM->value ? [
             'comment' => $comment,
         ] : []));
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
 }

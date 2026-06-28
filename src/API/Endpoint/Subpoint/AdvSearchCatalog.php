@@ -59,12 +59,12 @@ class AdvSearchCatalog
      */
     public function setAdvertSubjectActive(int $id, int $subjectId, bool $status): bool
     {
-        $this->Adv->getRequest('/adv/v0/active', [
+        $response = $this->Adv->getResponse('/adv/v0/active', [
             'id' => $id,
             'subjectId' => $subjectId,
             'status' => $status,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -90,10 +90,10 @@ class AdvSearchCatalog
         if (count($excluded) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества минус-фраз в запросе: {$maxCount}");
         }
-        $this->Adv->postRequest('/adv/v1/search/set-excluded?id=' . $id, [
+        $response = $this->Adv->postResponse('/adv/v1/search/set-excluded?id=' . $id, [
             'excluded' => $excluded,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**

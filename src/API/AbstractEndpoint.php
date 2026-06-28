@@ -8,6 +8,7 @@ use Dakword\WBSeller\API\Attribute\NonRetryable;
 use Dakword\WBSeller\API\Attribute\Retryable;
 use Dakword\WBSeller\API\Auth\TokenClaimsValidator;
 use Dakword\WBSeller\API\Client;
+use Dakword\WBSeller\API\Response\ApiResponse;
 use Dakword\WBSeller\Exception\ApiClientException;
 use Dakword\WBSeller\Exception\ApiTimeRestrictionsException;
 use Dakword\WBSeller\Enum\HttpMethod;
@@ -53,6 +54,7 @@ abstract class AbstractEndpoint
     private int $attempts = 1;
     private int $retryDelay = 5_000;
     private Client $Client;
+    private ?ApiResponse $lastResponse = null;
     private ?string $proxyUrl = null;
 
     /**
@@ -74,7 +76,7 @@ abstract class AbstractEndpoint
      * @param string|null $proxy       Прокси URL (null — без прокси)
      * @param string|null $locale      Язык ответов ('ru', 'en', …)
      * @param array       $middlewares Guzzle middlewares ['name' => callable] или [callable]
-     * @param array       $listeners   Обработчики событий ['request' => [], 'response' => [], 'error' => []]
+     * @param array       $listeners   Обработчики request, response, error и listener_error
      * @param bool        $verifySsl   Проверять SSL-сертификат сервера (по умолчанию true)
      * @throws ApiClientException Если токен истёк или не имеет прав на этот endpoint
      */
@@ -103,6 +105,9 @@ abstract class AbstractEndpoint
         foreach (($listeners['error'] ?? []) as $cb) {
             $this->Client->onError($cb);
         }
+        foreach (($listeners['listener_error'] ?? []) as $cb) {
+            $this->Client->onListenerError($cb);
+        }
 
         if (method_exists($this, 'middleware')) {
             $this->Client->addMiddleware($this->middleware());
@@ -113,26 +118,6 @@ abstract class AbstractEndpoint
                 $this->Client->addMiddleware($middleware, $middlewareName);
             }
         }
-    }
-
-    /**
-     * Магический вызов — открывает доступ к protected HTTP-методам извне.
-     *
-     * Subpoint-классы (AdvAuto, Tags и т.д.) вызывают методы родительского endpoint
-     * через `$this->endpoint->getRequest(...)`. Поскольку эти методы protected,
-     * их нельзя вызвать напрямую — __call перехватывает вызов и делегирует его.
-     *
-     * Разрешены только: getRequest, postRequest, putRequest, patchRequest,
-     * deleteRequest, multipartRequest. Любые другие имена бросают InvalidArgumentException.
-     */
-    public function __call($method, $parameters)
-    {
-        if (method_exists($this, $method)
-            && in_array($method, ['getRequest', 'postRequest', 'putRequest', 'patchRequest', 'deleteRequest', 'multipartRequest'])
-        ) {
-            return call_user_func_array([$this, $method], $parameters);
-        }
-        throw new InvalidArgumentException('Magic request methods not exists');
     }
 
     /**
@@ -205,31 +190,31 @@ abstract class AbstractEndpoint
     /** HTTP-статус последнего запроса (0 до первого запроса). */
     public function responseCode(): int
     {
-        return $this->Client->responseCode;
+        return $this->lastResponse?->statusCode ?? 0;
     }
 
     /** Текстовая фраза HTTP-статуса последнего запроса. */
     public function responsePhrase(): ?string
     {
-        return $this->Client->responsePhrase;
+        return $this->lastResponse?->reasonPhrase;
     }
 
     /** Заголовки последнего ответа в виде ['Header-Name' => ['value']]. */
     public function responseHeaders(): array
     {
-        return $this->Client->responseHeaders;
+        return $this->lastResponse?->headers ?? [];
     }
 
     /** Сырое тело последнего ответа в виде строки. */
     public function rawResponse(): ?string
     {
-        return $this->Client->rawResponse;
+        return $this->lastResponse?->rawBody;
     }
 
     /** Декодированный ответ последнего запроса (object при JSON, string иначе). */
     public function response()
     {
-        return $this->Client->response;
+        return $this->lastResponse?->body;
     }
 
     /**
@@ -243,46 +228,81 @@ abstract class AbstractEndpoint
      */
     public function responseRate(): array
     {
-        return [
-            'limit'     => $this->Client->rateLimit,
-            'remaining' => $this->Client->rateRemaining,
-            'reset'     => $this->Client->rateReset,
-            'retry'     => $this->Client->rateRetry,
+        return $this->lastResponse?->rateLimit->toArray() ?? [
+            'limit' => 0,
+            'remaining' => 0,
+            'reset' => 0,
+            'retry' => 0,
         ];
     }
 
+    public function lastResponse(): ?ApiResponse
+    {
+        return $this->lastResponse;
+    }
+
     /** Выполняет GET-запрос; параметры передаются в query string. */
-    protected function getRequest(string $path, array $data = [], array $addonHeaders = [])
+    public function getRequest(string $path, array $data = [], array $addonHeaders = [])
+    {
+        return $this->getResponse($path, $data, $addonHeaders)->body;
+    }
+
+    public function getResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::GET, $path, $data, $addonHeaders);
     }
 
     /** Выполняет POST-запрос; параметры сериализуются в JSON-тело. */
-    protected function postRequest(string $path, array $data = [], array $addonHeaders = [])
+    public function postRequest(string $path, array $data = [], array $addonHeaders = [])
+    {
+        return $this->postResponse($path, $data, $addonHeaders)->body;
+    }
+
+    public function postResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::POST, $path, $data, $addonHeaders);
     }
 
     /** Выполняет PUT-запрос; параметры сериализуются в JSON-тело. */
-    protected function putRequest(string $path, array $data = [], array $addonHeaders = [])
+    public function putRequest(string $path, array $data = [], array $addonHeaders = [])
+    {
+        return $this->putResponse($path, $data, $addonHeaders)->body;
+    }
+
+    public function putResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::PUT, $path, $data, $addonHeaders);
     }
 
     /** Выполняет PATCH-запрос; параметры сериализуются в JSON-тело. */
-    protected function patchRequest(string $path, array $data = [], array $addonHeaders = [])
+    public function patchRequest(string $path, array $data = [], array $addonHeaders = [])
+    {
+        return $this->patchResponse($path, $data, $addonHeaders)->body;
+    }
+
+    public function patchResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::PATCH, $path, $data, $addonHeaders);
     }
 
     /** Выполняет DELETE-запрос; параметры сериализуются в JSON-тело. */
-    protected function deleteRequest(string $path, array $data = [], array $addonHeaders = [])
+    public function deleteRequest(string $path, array $data = [], array $addonHeaders = [])
+    {
+        return $this->deleteResponse($path, $data, $addonHeaders)->body;
+    }
+
+    public function deleteResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::DELETE, $path, $data, $addonHeaders);
     }
 
     /** Выполняет POST-запрос с multipart/form-data (для загрузки файлов). */
-    protected function multipartRequest(string $path, array $data = [], array $addonHeaders = [])
+    public function multipartRequest(string $path, array $data = [], array $addonHeaders = [])
+    {
+        return $this->multipartResponse($path, $data, $addonHeaders)->body;
+    }
+
+    public function multipartResponse(string $path, array $data = [], array $addonHeaders = []): ApiResponse
     {
         return $this->request(HttpMethod::MULTIPART, $path, $data, $addonHeaders);
     }
@@ -304,14 +324,15 @@ abstract class AbstractEndpoint
         string $path,
         array $data = [],
         array $addonHeaders = []
-    ) {
+    ): ApiResponse {
         $attempt = 1;
         $retryAllowed = $this->isRetryAllowed($method);
 
         while (true) {
             try {
-                return $this->Client->request($method, $path, $data, $addonHeaders);
+                return $this->lastResponse = $this->Client->request($method, $path, $data, $addonHeaders);
             } catch (ApiClientException $exception) {
+                $this->lastResponse = $exception->response();
                 $status = $exception->statusCode();
                 $message = $exception->getMessage();
 
@@ -378,7 +399,7 @@ abstract class AbstractEndpoint
             }
         }
 
-        $allowedEvents = ['request', 'response', 'error'];
+        $allowedEvents = ['request', 'response', 'error', 'listener_error'];
         foreach ($listeners as $event => $callbacks) {
             if (!is_string($event) || !in_array($event, $allowedEvents, true)) {
                 throw new InvalidArgumentException('Неизвестный тип listener: ' . (string) $event);

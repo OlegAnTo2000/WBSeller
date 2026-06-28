@@ -19,7 +19,7 @@ class RetryPolicyTest extends TestCase
 {
     public function testRetryableAttributeAllowsPostRetry(): void
     {
-        $endpoint = $this->endpointWithResponses(
+        [$endpoint, $mock] = $this->endpointWithResponses(
             new Response(504, [], '{"error":"timeout"}'),
             new Response(200, [], '{"ok":true}'),
         );
@@ -27,47 +27,73 @@ class RetryPolicyTest extends TestCase
         $endpoint->retryOnTooManyRequests(2, 0);
 
         self::assertTrue($endpoint->readByPost()->ok);
+        self::assertCount(0, $mock);
     }
 
     public function testPostIsNotRetriedByDefault(): void
     {
-        $endpoint = $this->endpointWithResponses(
+        [$endpoint, $mock] = $this->endpointWithResponses(
             new Response(504, [], '{"error":"timeout"}'),
             new Response(200, [], '{"ok":true}'),
         );
 
-        $this->expectException(ApiClientException::class);
         $endpoint->retryOnTooManyRequests(2, 0);
-        $endpoint->writeByPost();
+        try {
+            $endpoint->writeByPost();
+            self::fail('Ожидалось HTTP-исключение');
+        } catch (ApiClientException) {
+            self::assertCount(1, $mock);
+        }
     }
 
     public function testNonRetryableAttributeDisablesGetRetry(): void
     {
-        $endpoint = $this->endpointWithResponses(
+        [$endpoint, $mock] = $this->endpointWithResponses(
             new Response(504, [], '{"error":"timeout"}'),
             new Response(200, [], '{"ok":true}'),
         );
 
-        $this->expectException(ApiClientException::class);
         $endpoint->retryOnTooManyRequests(2, 0);
-        $endpoint->unsafeGet();
+        try {
+            $endpoint->unsafeGet();
+            self::fail('Ожидалось HTTP-исключение');
+        } catch (ApiClientException) {
+            self::assertCount(1, $mock);
+        }
     }
 
-    private function endpointWithResponses(Response ...$responses): RetryPolicyEndpoint
+    public function testRetryIsDisabledByDefault(): void
+    {
+        [$endpoint, $mock] = $this->endpointWithResponses(
+            new Response(504, [], '{"error":"timeout"}'),
+            new Response(200, [], '{"ok":true}'),
+        );
+
+        try {
+            $endpoint->readByGet();
+            self::fail('Ожидалось HTTP-исключение');
+        } catch (ApiClientException) {
+            self::assertCount(1, $mock);
+        }
+    }
+
+    /** @return array{RetryPolicyEndpoint, MockHandler} */
+    private function endpointWithResponses(Response ...$responses): array
     {
         $endpoint = new RetryPolicyEndpoint('https://example.test', 'fake-key');
+        $mock = new MockHandler($responses);
         $client = new Client(
             'https://example.test',
             'fake-key',
             null,
             true,
-            HandlerStack::create(new MockHandler($responses)),
+            HandlerStack::create($mock),
         );
 
         $property = new ReflectionProperty(AbstractEndpoint::class, 'Client');
         $property->setValue($endpoint, $client);
 
-        return $endpoint;
+        return [$endpoint, $mock];
     }
 }
 
@@ -88,5 +114,10 @@ final class RetryPolicyEndpoint extends AbstractEndpoint
     public function unsafeGet(): object
     {
         return $this->getRequest('/unsafe');
+    }
+
+    public function readByGet(): object
+    {
+        return $this->getRequest('/read');
     }
 }

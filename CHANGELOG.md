@@ -1,4 +1,37 @@
-### 5.0.0 - 21/06/2025
+### 5.0.0 — в разработке
+
+#### ⚠ Breaking changes
+
+* `Client::request()` возвращает immutable `ApiResponse`, а не только декодированное тело.
+* Удалены mutable-свойства последнего ответа из `Client`. `ApiResponse` содержит `body`,
+  `rawBody`, `statusCode`, `reasonPhrase`, `headers` и `rateLimit`.
+* Все HTTP-ответы `4xx/5xx` представлены `ApiClientException` независимо от формата тела.
+  Сетевые ошибки и исключения middleware представлены `ApiTransportException`.
+* Retry по умолчанию отключён. `GET` можно повторять после явного включения retry;
+  остальные HTTP-методы требуют атрибут `Retryable`. `NonRetryable` явно запрещает повтор.
+* Удалён `AbstractEndpoint::__call()`. Методы выполнения запросов объявлены явно.
+
+#### Новое
+
+* Добавлены `ApiResponse` и `RateLimit` для передачи тела и HTTP-метаданных одним объектом.
+* Добавлены атрибуты `Retryable` и `NonRetryable` для управления безопасностью повторов.
+* Добавлены `ApiTransportException` и `LocalTokenValidationException`.
+* Локальная проверка JWT claims вынесена в `TokenClaimsValidator` и отделена от серверной аутентификации.
+* Добавлен `API::onListenerError()` и событие `listeners.listener_error`. Без обработчика
+  исключения listeners записываются через стандартный `error_log()` PHP.
+* Заголовки ограничения запросов задокументированы как `X-Ratelimit-Limit`,
+  `X-Ratelimit-Reset` и `X-Ratelimit-Retry`.
+
+#### Исправления и качество
+
+* Endpoint-методы больше не зависят от общего состояния `responseCode()` последнего запроса.
+* Исправлен отсутствующий вызов `Marketplace::getOrdersClient()` в CrossBorder.
+* Добавлены unit-тесты HTTP-ошибок, retry, middleware и listeners.
+* Устранены текущие ошибки PHPStan.
+
+---
+
+### 4.34.1 - 21/06/2025
 
 #### ⚠ Breaking changes — требуется ревизия кода при обновлении
 

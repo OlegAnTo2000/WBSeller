@@ -69,12 +69,11 @@ class Warehouses
      */
     public function update(int $id, string $name, int $officeId): bool
     {
-        $this->Marketplace->putRequest('/api/v3/warehouses/' . $id, [
+        $response = $this->Marketplace->putResponse('/api/v3/warehouses/' . $id, [
             'name' => mb_substr($name, 0, 200),
             'officeId' => $officeId,
         ]);
-        
-        return $this->Marketplace->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -86,9 +85,8 @@ class Warehouses
      */
     public function delete(int $id): bool
     {
-        $this->Marketplace->deleteRequest('/api/v3/warehouses/' . $id,);
-        
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->deleteResponse('/api/v3/warehouses/' . $id,);
+        return $response->statusCode === 204;
     }    
     
 }

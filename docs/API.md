@@ -47,6 +47,10 @@ X-Ratelimit-Limit: 10
 
 Сетевые ошибки и исключения middleware представлены `ApiTransportException`. Все исключения транспорта библиотеки наследуют `WBSellerException`, поэтому для общего обработчика достаточно перехватить этот базовый класс.
 
+`Client::request()` возвращает immutable `ApiResponse`. Он содержит декодированное `body`, исходное `rawBody`, `statusCode`, `reasonPhrase`, `headers` и объект `rateLimit`. При HTTP-ошибке тот же объект доступен через `ApiClientException::response()`. Endpoint сохраняет `lastResponse()` только для совместимости и внешней диагностики; внутренняя логика использует ответ конкретного запроса.
+
+Исключения из `request`, `response` и `error` listeners не прерывают HTTP-запрос, но больше не теряются. Их можно получить через `$api->onListenerError($callback)` или секцию `listeners.listener_error`. Если обработчик не зарегистрирован, сообщение записывается через стандартный `error_log()` PHP.
+
 ### Поддерживаемые API
 
 | API | Endpoint | $options['keys' / 'apiurls']['?'] | 'apiurls' defaults |

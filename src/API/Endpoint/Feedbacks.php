@@ -184,11 +184,11 @@ class Feedbacks extends AbstractEndpoint
      */
     public function sendAnswer(string $id, string $answerText): bool
     {
-        $this->postRequest('/api/v1/feedbacks/answer', [
+        $response = $this->postResponse('/api/v1/feedbacks/answer', [
             'id' => $id,
             'text' => $answerText,
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -201,11 +201,11 @@ class Feedbacks extends AbstractEndpoint
      */
     public function updateAnswer(string $id, string $answerText): bool
     {
-        $this->patchRequest('/api/v1/feedbacks/answer', [
+        $response = $this->patchResponse('/api/v1/feedbacks/answer', [
             'id' => $id,
             'text' => $answerText,
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -251,11 +251,11 @@ class Feedbacks extends AbstractEndpoint
      */
     public function rateFeedback(string $id, int $feedbackRateId): bool
     {
-        $this->postRequest('/api/v1/feedbacks/actions', [
+        $response = $this->postResponse('/api/v1/feedbacks/actions', [
             'id' => $id,
             'supplierFeedbackValuation' => $feedbackRateId,
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -269,11 +269,11 @@ class Feedbacks extends AbstractEndpoint
      */
     public function rateProduct(string $id, int $productRateId): bool
     {
-        $this->postRequest('/api/v1/feedbacks/actions', [
+        $response = $this->postResponse('/api/v1/feedbacks/actions', [
             'id' => $id,
             'supplierProductValuation' => $productRateId,
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -288,12 +288,12 @@ class Feedbacks extends AbstractEndpoint
      */
     public function rate(string $id, int $feedbackRateId, int $productRateId): bool
     {
-        $this->postRequest('/api/v1/feedbacks/actions', [
+        $response = $this->postResponse('/api/v1/feedbacks/actions', [
             'id' => $id,
             'supplierFeedbackValuation' => $feedbackRateId,
             'supplierProductValuation' => $productRateId,
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -309,10 +309,10 @@ class Feedbacks extends AbstractEndpoint
      */
     public function orderReturn(string $id): bool
     {
-        $this->postRequest('/api/v1/feedbacks/order/return', [
+        $response = $this->postResponse('/api/v1/feedbacks/order/return', [
             'feedbackId' => $id,
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     private function checkOrder($order)

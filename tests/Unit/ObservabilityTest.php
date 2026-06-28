@@ -32,7 +32,11 @@ class ObservabilityTest extends TestCase
     public function testListenerOrderAndErrorsDoNotInterruptRequest(): void
     {
         $events = [];
+        $listenerErrors = [];
         $client = $this->client(new Response(200, [], '{}'));
+        $client->onListenerError(static function (array $event) use (&$listenerErrors): void {
+            $listenerErrors[] = [$event['event'], $event['listener_index'], $event['message']];
+        });
         $client->onRequest(static function () use (&$events): void { $events[] = 'request:1'; });
         $client->onRequest(static function (): void { throw new RuntimeException('listener failed'); });
         $client->onRequest(static function () use (&$events): void { $events[] = 'request:2'; });
@@ -42,12 +46,17 @@ class ObservabilityTest extends TestCase
         $client->request('GET', '/test');
 
         self::assertSame(['request:1', 'request:2', 'response:1', 'response:2'], $events);
+        self::assertSame([['request', 1, 'listener failed']], $listenerErrors);
     }
 
     public function testErrorListenersRunInOrderAndCannotReplaceHttpException(): void
     {
         $events = [];
+        $listenerErrors = [];
         $client = $this->client(new Response(500, [], 'failed'));
+        $client->onListenerError(static function (array $event) use (&$listenerErrors): void {
+            $listenerErrors[] = $event['event'];
+        });
         $client->onError(static function () use (&$events): void { $events[] = 'error:1'; });
         $client->onError(static function (): void { throw new RuntimeException('listener failed'); });
         $client->onError(static function () use (&$events): void { $events[] = 'error:2'; });
@@ -57,6 +66,7 @@ class ObservabilityTest extends TestCase
             self::fail('Ожидалось HTTP-исключение');
         } catch (ApiClientException) {
             self::assertSame(['error:1', 'error:2'], $events);
+            self::assertSame(['error'], $listenerErrors);
         }
     }
 

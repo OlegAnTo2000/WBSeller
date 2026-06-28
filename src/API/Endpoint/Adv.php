@@ -166,10 +166,10 @@ class Adv extends AbstractEndpoint
      */
     public function delete(int $id): bool
     {
-        $this->getRequest('/adv/v0/delete', [
+        $response = $this->getResponse('/adv/v0/delete', [
             'id' => $id,
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -230,11 +230,11 @@ class Adv extends AbstractEndpoint
      */
     public function renameAdvert(int $advertId, string $name): bool
     {
-        $this->postRequest('/adv/v0/rename', [
+        $response = $this->postResponse('/adv/v0/rename', [
             'advertId' => $advertId,
             'name' => mb_substr($name, 0, 100)
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -306,14 +306,14 @@ class Adv extends AbstractEndpoint
     public function updateCpm(int $advertId, int $type, int $cpm, int $param, int $instrument): bool
     {
         $this->checkType($type, [AdvertType::ON_CARD->value, AdvertType::ON_SEARCH->value, AdvertType::ON_HOME_RECOM->value]);
-        $this->postRequest('/adv/v0/cpm', [
+        $response = $this->postResponse('/adv/v0/cpm', [
             'advertId'   => $advertId,
             'type'       => $type,
             'cpm'        => $cpm,
             'param'      => $param,
             'instrument' => $instrument,
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -325,8 +325,8 @@ class Adv extends AbstractEndpoint
      */
     public function start(int $id): bool
     {
-        $this->getRequest('/adv/v0/start', ['id' => $id]);
-        return $this->responseCode() == 200;
+        $response = $this->getResponse('/adv/v0/start', ['id' => $id]);
+        return $response->statusCode === 200;
     }
 
     /**
@@ -338,8 +338,8 @@ class Adv extends AbstractEndpoint
      */
     public function pause(int $id): bool
     {
-        $this->getRequest('/adv/v0/pause', ['id' => $id]);
-        return $this->responseCode() == 200;
+        $response = $this->getResponse('/adv/v0/pause', ['id' => $id]);
+        return $response->statusCode === 200;
     }
 
     /**
@@ -351,8 +351,8 @@ class Adv extends AbstractEndpoint
      */
     public function stop(int $id): bool
     {
-        $this->getRequest('/adv/v0/stop', ['id' => $id]);
-        return $this->responseCode() == 200;
+        $response = $this->getResponse('/adv/v0/stop', ['id' => $id]);
+        return $response->statusCode === 200;
     }
 
     /**
@@ -459,10 +459,10 @@ class Adv extends AbstractEndpoint
         if (count($placements) > 50) {
             throw new InvalidArgumentException("Превышение максимального количества мест размещения в запросе: 50");
         }
-        $this->putRequest('/adv/v0/auction/placements', [
+        $response = $this->putResponse('/adv/v0/auction/placements', [
             'placements' => $placements,
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**

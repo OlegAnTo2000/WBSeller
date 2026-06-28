@@ -37,16 +37,20 @@ class ClientTest extends TestCase
     {
         $client = $this->clientWithResponses(new Response(200, [], $body));
 
-        self::assertEquals($expected, $client->request(HttpMethod::GET, '/test'));
-        self::assertEquals($expected, $client->response);
+        $response = $client->request(HttpMethod::GET, '/test');
+
+        self::assertEquals($expected, $response->body);
+        self::assertSame($body, $response->rawBody);
     }
 
     public function testMockHandlerDoesNotRequireNetworkOrRealApiKey(): void
     {
         $client = $this->clientWithResponses(new Response(200, [], '{"ok":true}'));
 
-        self::assertTrue($client->request('GET', '/test')->ok);
-        self::assertSame(200, $client->responseCode);
+        $response = $client->request('GET', '/test');
+
+        self::assertTrue($response->body->ok);
+        self::assertSame(200, $response->statusCode);
     }
 
     public static function errorResponses(): array
@@ -79,8 +83,26 @@ class ClientTest extends TestCase
             self::assertSame($body, $exception->rawResponse());
             self::assertSame($message, $exception->getMessage());
             self::assertNotNull($exception->getPrevious());
-            self::assertEquals($decoded, $client->response);
+            self::assertEquals($decoded, $exception->response()?->body);
         }
+    }
+
+    public function testResponseContainsHeadersAndRateLimit(): void
+    {
+        $client = $this->clientWithResponses(new Response(200, [
+            'X-Ratelimit-Limit' => '10',
+            'X-Ratelimit-Remaining' => '7',
+            'X-Ratelimit-Reset' => '29',
+            'X-Ratelimit-Retry' => '2',
+        ], '{}'));
+
+        $response = $client->request('GET', '/test');
+
+        self::assertSame('10', $response->headers['X-Ratelimit-Limit'][0]);
+        self::assertSame(10, $response->rateLimit->limit);
+        self::assertSame(7, $response->rateLimit->remaining);
+        self::assertSame(29, $response->rateLimit->reset);
+        self::assertSame(2, $response->rateLimit->retry);
     }
 
     public function testTransportErrorIsNormalized(): void

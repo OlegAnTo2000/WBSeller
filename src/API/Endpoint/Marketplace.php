@@ -293,8 +293,8 @@ class Marketplace extends AbstractEndpoint
         if (count($sgtin) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества элементов переданного массива: {$maxCount}");
         }
-        $this->putRequest('/api/v3/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
-        return $this->responseCode() == 204;
+        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -311,8 +311,8 @@ class Marketplace extends AbstractEndpoint
      */
     public function setOrderUin(int $orderId, string $uin): bool
     {
-        $this->putRequest('/api/v3/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
-        return $this->responseCode() == 204;
+        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -329,8 +329,8 @@ class Marketplace extends AbstractEndpoint
      */
     public function setOrderIMEI(int $orderId, string $imei): bool
     {
-        $this->putRequest('/api/v3/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
-        return $this->responseCode() == 204;
+        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -347,8 +347,8 @@ class Marketplace extends AbstractEndpoint
      */
     public function setOrderGTIN(int $orderId, string $gtin): bool
     {
-        $this->putRequest('/api/v3/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
-        return $this->responseCode() == 204;
+        $response = $this->putResponse('/api/v3/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -380,10 +380,10 @@ class Marketplace extends AbstractEndpoint
         if (!in_array($key, ['imei', 'uin', 'gtin', 'sgtin'])) {
             throw new InvalidArgumentException('Неизвестное название метаданных: ' . $key);
         }
-        $this->deleteRequest('/api/v3/orders/' . $orderId . '/meta', [
+        $response = $this->deleteResponse('/api/v3/orders/' . $orderId . '/meta', [
             'key' => $key
         ]);
-        return $this->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -523,8 +523,8 @@ class Marketplace extends AbstractEndpoint
      */
     public function deleteSupplyBoxes(string $supplyId, array $boxeIds): bool
     {
-        $this->deleteRequest('/api/v3/supplies/' . $supplyId . '/trbx', ['trbxIds' => $boxeIds]);
-        return $this->responseCode() == 204;
+        $response = $this->deleteResponse('/api/v3/supplies/' . $supplyId . '/trbx', ['trbxIds' => $boxeIds]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -541,8 +541,8 @@ class Marketplace extends AbstractEndpoint
      */
     public function addBoxOrders(string $supplyId, string $boxId, array $orderIds): bool
     {
-        $this->patchRequest('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId, ['orderIds' => $orderIds]);
-        return $this->responseCode() == 204;
+        $response = $this->patchResponse('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId, ['orderIds' => $orderIds]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -559,8 +559,8 @@ class Marketplace extends AbstractEndpoint
      */
     public function deleteBoxOrder(string $supplyId, string $boxId, int $orderId): bool
     {
-        $this->deleteRequest('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId . '/orders/' . $orderId);
-        return $this->responseCode() == 204;
+        $response = $this->deleteResponse('/api/v3/supplies/' . $supplyId . '/trbx/' . $boxId . '/orders/' . $orderId);
+        return $response->statusCode === 204;
     }
 
     /**

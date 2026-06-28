@@ -77,7 +77,7 @@ class CrossBorder
      */
     public function getOrdersClient(array $orders)
     {
-        return $this->Marketplace->getOrdersClient($orders);
+        return $this->Marketplace->DBS()->getOrdersClient($orders);
     }
 
 }

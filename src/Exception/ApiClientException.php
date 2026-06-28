@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\Exception;
 
+use Dakword\WBSeller\API\Response\ApiResponse;
 use Throwable;
 
 /**
@@ -25,9 +26,7 @@ class ApiClientException extends WBSellerException
         string $message,
         int $statusCode = 0,
         ?Throwable $previous = null,
-        private readonly mixed $responseBody = null,
-        private readonly ?string $rawResponse = null,
-        private readonly array $responseHeaders = [],
+        private readonly ?ApiResponse $response = null,
     ) {
         parent::__construct($message, $statusCode, $previous);
     }
@@ -39,16 +38,21 @@ class ApiClientException extends WBSellerException
 
     public function responseBody(): mixed
     {
-        return $this->responseBody;
+        return $this->response?->body;
     }
 
     public function rawResponse(): ?string
     {
-        return $this->rawResponse;
+        return $this->response?->rawBody;
     }
 
     public function responseHeaders(): array
     {
-        return $this->responseHeaders;
+        return $this->response?->headers ?? [];
+    }
+
+    public function response(): ?ApiResponse
+    {
+        return $this->response;
     }
 }

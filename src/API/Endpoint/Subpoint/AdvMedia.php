@@ -110,11 +110,11 @@ class AdvMedia
      */
     public function start(int $id, string $reason = ''): bool
     {
-        $this->Adv->postRequest('/adv/v1/advert/start', [
+        $response = $this->Adv->postResponse('/adv/v1/advert/start', [
             'advert_id' => $id,
             'reason' => $reason,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -133,11 +133,11 @@ class AdvMedia
      */
     public function pause(int $id, string $reason = ''): bool
     {
-        $this->Adv->postRequest('/adv/v1/advert/pause', [
+        $response = $this->Adv->postResponse('/adv/v1/advert/pause', [
             'advert_id' => $id,
             'reason' => $reason,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -154,11 +154,11 @@ class AdvMedia
      */
     public function stop(int $id, string $reason = ''): bool
     {
-        $this->Adv->postRequest('/adv/v1/advert/stop', [
+        $response = $this->Adv->postResponse('/adv/v1/advert/stop', [
             'advert_id' => $id,
             'reason' => $reason,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /*
@@ -227,11 +227,11 @@ class AdvMedia
      */
     public function changeAdvertItemCpm(int $advertId, int $itemId, int $cpm): bool
     {
-        $this->Adv->postRequest('/adv/v1/item/cpm/change', [
+        $response = $this->Adv->postResponse('/adv/v1/item/cpm/change', [
             'advert_id' => $advertId,
             'item_id' => $itemId,
             'cpm' => $cpm,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 }

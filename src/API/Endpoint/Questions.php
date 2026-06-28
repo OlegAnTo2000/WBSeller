@@ -164,11 +164,11 @@ class Questions extends AbstractEndpoint
      */
     public function changeViewed(string $id, bool $wasViewed): bool
     {
-        $this->patchRequest('/api/v1/questions', [
+        $response = $this->patchResponse('/api/v1/questions', [
             'id' => $id,
             'wasViewed' => $wasViewed,
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -181,14 +181,14 @@ class Questions extends AbstractEndpoint
      */
     public function sendAnswer(string $id, string $answerText): bool
     {
-        $this->patchRequest('/api/v1/questions', [
+        $response = $this->patchResponse('/api/v1/questions', [
             'id' => $id,
             'answer' => (object)[
                 'text' => $answerText,
             ],
             'state' => 'wbRu',
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -203,14 +203,14 @@ class Questions extends AbstractEndpoint
      */
     public function reject(string $id, string $answerText): bool
     {
-        $this->patchRequest('/api/v1/questions', [
+        $response = $this->patchResponse('/api/v1/questions', [
             'id' => $id,
             'answer' => (object)[
                 'text' => $answerText,
             ],
             'state' => 'none',
         ]);
-        return $this->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**

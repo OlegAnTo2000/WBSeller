@@ -26,8 +26,8 @@ class WBGO
      */
     public function confirm(int $order_id): bool
     {
-        $this->Marketplace->patchRequest("/api/v3/orders/{$order_id}/confirm");
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->patchResponse("/api/v3/orders/{$order_id}/confirm");
+        return $response->statusCode === 204;
     }
 
     /**
@@ -40,8 +40,8 @@ class WBGO
      */
     public function assemble(int $order_id): bool
     {
-        $this->Marketplace->patchRequest("/api/v3/orders/{$order_id}/assemble");
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->patchResponse("/api/v3/orders/{$order_id}/assemble");
+        return $response->statusCode === 204;
     }
 
     /**
@@ -79,9 +79,9 @@ class WBGO
         if (count($contacts) > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества контактов: {$maxLimit}");
         }
-        $this->Marketplace->putRequest("/api/v3/warehouses/{$warehouse_id}/contacts", [
+        $response = $this->Marketplace->putResponse("/api/v3/warehouses/{$warehouse_id}/contacts", [
             'contacts' => $contacts,
         ]);
-        return $this->Marketplace->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 }

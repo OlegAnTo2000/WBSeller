@@ -96,11 +96,11 @@ class AdvAuto
      */
     public function updateAdvertNms(int $id, array $nmsToAdd, array $nmsToDelete): bool
     {
-        $this->Adv->getRequest('/adv/v1/auto/updatenm?id=' . $id, [
+        $response = $this->Adv->getResponse('/adv/v1/auto/updatenm?id=' . $id, [
             'add' => $nmsToAdd,
             'delete' => $nmsToDelete,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**
@@ -125,10 +125,10 @@ class AdvAuto
         if (count($excluded) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества минус-фраз в запросе: {$maxCount}");
         }
-        $this->Adv->postRequest('/adv/v1/auto/set-excluded?id=' . $id, [
+        $response = $this->Adv->postResponse('/adv/v1/auto/set-excluded?id=' . $id, [
             'excluded' => $excluded,
         ]);
-        return $this->Adv->responseCode() == 200;
+        return $response->statusCode === 200;
     }
 
     /**

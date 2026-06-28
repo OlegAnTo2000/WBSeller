@@ -95,8 +95,8 @@ class DBS
      */
     public function confirm(int $order_id): bool
     {
-        $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/confirm");
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/confirm");
+        return $response->statusCode === 204;
     }
 
     /**
@@ -111,8 +111,8 @@ class DBS
      */
     public function deliver(int $order_id): bool
     {
-        $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/deliver");
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/deliver");
+        return $response->statusCode === 204;
     }
 
     /**
@@ -142,8 +142,8 @@ class DBS
      */
     public function receive(int $order_id): bool
     {
-        $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/receive");
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/receive");
+        return $response->statusCode === 204;
     }
 
     /**
@@ -158,8 +158,8 @@ class DBS
      */
     public function reject(int $order_id): bool
     {
-        $this->Marketplace->patchRequest("/api/v3/dbs/orders/{$order_id}/reject");
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->patchResponse("/api/v3/dbs/orders/{$order_id}/reject");
+        return $response->statusCode === 204;
     }
 
     /**
@@ -211,10 +211,10 @@ class DBS
         if (!in_array($key, ['imei', 'uin', 'gtin', 'sgtin'])) {
             throw new InvalidArgumentException('Неизвестное название метаданных: ' . $key);
         }
-        $this->Marketplace->deleteRequest('/api/v3/dbs/orders/' . $orderId . '/meta', [
+        $response = $this->Marketplace->deleteResponse('/api/v3/dbs/orders/' . $orderId . '/meta', [
             'key' => $key
         ]);
-        return $this->Marketplace->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -232,8 +232,8 @@ class DBS
         if (count($sgtin) > $maxCount) {
             throw new InvalidArgumentException("Превышение максимального количества элементов переданного массива: {$maxCount}");
         }
-        $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/sgtin', ['sgtins' => $sgtin]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -251,8 +251,8 @@ class DBS
      */
     public function setOrderUin(int $orderId, string $uin): bool
     {
-        $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/uin', ['uin' => $uin]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -270,8 +270,8 @@ class DBS
      */
     public function setOrderIMEI(int $orderId, string $imei): bool
     {
-        $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/imei', ['imei' => $imei]);
+        return $response->statusCode === 204;
     }
 
     /**
@@ -289,8 +289,8 @@ class DBS
      */
     public function setOrderGTIN(int $orderId, string $gtin): bool
     {
-        $this->Marketplace->putRequest('/api/v3/dbs/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->putResponse('/api/v3/dbs/orders/' . $orderId . '/meta/gtin', ['gtin' => $gtin]);
+        return $response->statusCode === 204;
     }
 
 }

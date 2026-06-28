@@ -276,12 +276,12 @@ class AdvSearchClusters
 	 */
 	public function normquerySetMinus(int $advert_id, int $nm_id, array $norm_queries): bool
 	{
-		$this->Adv->postRequest('/adv/v0/normquery/set-minus', [
+		$response = $this->Adv->postResponse('/adv/v0/normquery/set-minus', [
 			'advert_id'    => $advert_id,
 			'nm_id'        => $nm_id,
 			'norm_queries' => $norm_queries,
 		]);
-		return $this->Adv->responseCode() === 200;
+		return $response->statusCode === 200;
 	}
 
 	/**

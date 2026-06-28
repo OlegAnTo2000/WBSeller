@@ -56,6 +56,7 @@ class API
         'request'  => [],
         'response' => [],
         'error'    => [],
+        'listener_error' => [],
     ];
 
     /**
@@ -102,6 +103,7 @@ class API
      *     'request' => [callable],
      *     'response' => [callable],
      *     'error' => [callable],
+     *     'listener_error' => [callable],
      *   ],
      *   'proxy' => 'http://122.123.123.123:8088',
      *   'ssl_verify' => true,
@@ -193,11 +195,21 @@ class API
      * Callback получает массив: ['request_id', 'method', 'url', 'status', 'raw',
      * 'duration_ms', 'exception_class', 'message'].
      * Вызывается как при 4xx/5xx ответах, так и при сетевых исключениях (timeout, DNS).
-     * Ошибки внутри callback подавляются, чтобы не прерывать основной поток.
+     * Ошибки внутри callback передаются обработчикам onListenerError.
      */
     public function onError(callable $cb): self
     {
         $this->listeners['error'][] = $cb;
+        return $this;
+    }
+
+    /**
+     * Регистрирует обработчик исключений, возникших внутри других listeners.
+     * Callback получает event, listener_index, exception_class, message и exception.
+     */
+    public function onListenerError(callable $cb): self
+    {
+        $this->listeners['listener_error'][] = $cb;
         return $this;
     }
 
@@ -215,7 +227,7 @@ class API
             throw new \InvalidArgumentException('Параметр listeners должен быть массивом');
         }
 
-        $validated = ['request' => [], 'response' => [], 'error' => []];
+        $validated = ['request' => [], 'response' => [], 'error' => [], 'listener_error' => []];
         foreach ($listeners as $event => $callbacks) {
             if (!is_string($event) || !array_key_exists($event, $validated)) {
                 throw new \InvalidArgumentException('Неизвестный тип listener: ' . (string) $event);
@@ -642,7 +654,7 @@ class API
     {
         return new Test(
             '',
-            $this->masterKey ?? '',
+            $this->masterKey,
             $this->proxy,
             $this->locale,
             $this->middlewares,

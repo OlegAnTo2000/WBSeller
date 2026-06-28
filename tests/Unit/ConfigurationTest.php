@@ -93,6 +93,7 @@ class ConfigurationTest extends TestCase
                 'request' => [$listener],
                 'response' => [$listener],
                 'error' => [$listener],
+                'listener_error' => [$listener],
             ],
         ]);
 

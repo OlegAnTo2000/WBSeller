@@ -72,15 +72,14 @@ class Passes
      */
     public function update(int $id, int $officeId, string $carModel, string $carNumber, string $firstName, string $lastName): bool
     {
-        $this->Marketplace->putRequest('/api/v3/passes/' . $id, [
+        $response = $this->Marketplace->putResponse('/api/v3/passes/' . $id, [
             'officeId' => $officeId,
             'carModel' => mb_substr($carModel, 0, 100),
             'carNumber' => $carNumber,
             'firstName' => $firstName,
             'lastName' => $lastName,
         ]);
-        
-        return $this->Marketplace->responseCode() == 204;
+        return $response->statusCode === 204;
     }
 
     /**
@@ -92,9 +91,8 @@ class Passes
      */
     public function delete(int $id): bool
     {
-        $this->Marketplace->deleteRequest('/api/v3/passes/' . $id,);
-        
-        return $this->Marketplace->responseCode() == 204;
+        $response = $this->Marketplace->deleteResponse('/api/v3/passes/' . $id,);
+        return $response->statusCode === 204;
     }    
     
 }
