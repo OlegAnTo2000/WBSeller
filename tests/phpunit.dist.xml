@@ -20,5 +20,6 @@
 		<env name="NM_ID"  value="" />
 		<env name="DATE_FROM"  value="" />
 		<env name="DATE_TO"  value="" />
+		<env name="PROXY"  value="" />
 	</php>
 </phpunit>

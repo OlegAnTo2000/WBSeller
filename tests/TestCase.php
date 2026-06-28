@@ -20,10 +20,17 @@ class TestCase extends PHPUnitTestCase
 
     protected function API(): API
     {
-        return new API([
+        $options = [
             'masterkey' => $this->apiKey,
             'locale' => 'ru',
-        ]);
+        ];
+
+        $proxy = getenv('PROXY');
+        if (is_string($proxy) && $proxy !== '') {
+            $options['proxy'] = $proxy;
+        }
+
+        return new API($options);
     }
 
     protected function skipIfNoKeyAPI(): void
