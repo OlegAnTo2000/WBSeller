@@ -13,7 +13,7 @@ class PricesTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Prices::class, $this->API()->Prices());
+        $this->assertInstanceOf(Prices::class, $this->Prices());
     }
 
     /**

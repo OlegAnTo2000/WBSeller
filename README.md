@@ -34,6 +34,31 @@ foreach ($cards->cards as $card) {
 
 Ключ из `keys` используется для конкретного API. `masterkey` служит fallback, если отдельный ключ не задан.
 
+### Прокси
+
+Прокси задаётся URL-строкой в параметре `proxy`:
+
+```php
+$wbSellerAPI = new \Dakword\WBSeller\API([
+    'masterkey' => 'token',
+    'proxy' => 'http://login:password@127.0.0.1:8080',
+]);
+```
+
+Поддерживается SOCKS5 с разрешением DNS через прокси:
+
+```php
+$wbSellerAPI->setProxy('socks5h://login:password@127.0.0.1:1080');
+```
+
+Для интеграционных тестов прокси указывается в `tests/phpunit.xml`:
+
+```xml
+<env name="PROXY" value="socks5h://login:password@127.0.0.1:1080" />
+```
+
+Формат URL: `scheme://login:password@host:port`. Спецсимволы в логине и пароле должны быть URL-кодированы, например `@` — `%40`, `:` — `%3A`.
+
 ### Ответ и обработка ошибок
 
 Все endpoint-методы, выполняющие HTTP-запрос, возвращают immutable `ApiResponse`. Тело ответа декодируется явно:

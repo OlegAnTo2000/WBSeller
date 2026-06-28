@@ -19,7 +19,7 @@ class FeedbacksTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Feedbacks::class, $this->API()->Feedbacks());
+        $this->assertInstanceOf(Feedbacks::class, $this->Feedbacks());
     }
 
     public function test_hasNew()

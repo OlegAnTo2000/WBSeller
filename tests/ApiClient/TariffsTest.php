@@ -13,7 +13,7 @@ class TariffsTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Tariffs::class, $this->API()->Tariffs());
+        $this->assertInstanceOf(Tariffs::class, $this->Tariffs());
     }
 
     /**
@@ -21,7 +21,7 @@ class TariffsTest extends TestCase
      */
     public function test_box()
     {
-        $result = $this->API()->Tariffs()->box(new \DateTime());
+        $result = $this->Tariffs()->box(new \DateTime());
         $result = $this->decodeResponse($result);
 
         $this->assertTrue(property_exists($result, 'dtNextBox'));
@@ -34,7 +34,7 @@ class TariffsTest extends TestCase
      */
     public function test_pallet()
     {
-        $result = $this->API()->Tariffs()->pallet(new \DateTime());
+        $result = $this->Tariffs()->pallet(new \DateTime());
         $result = $this->decodeResponse($result);
 
         $this->assertTrue(property_exists($result, 'dtNextPallet'));
@@ -47,7 +47,7 @@ class TariffsTest extends TestCase
      */
     public function test_return()
     {
-        $result = $this->API()->Tariffs()->return(new \DateTime());
+        $result = $this->Tariffs()->return(new \DateTime());
         $result = $this->decodeResponse($result);
 
         $this->assertTrue(property_exists($result, 'dtNextDeliveryDumpKgt'));

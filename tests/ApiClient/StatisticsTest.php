@@ -12,7 +12,7 @@ class StatisticsTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Statistics::class, $this->API()->Statistics());
+        $this->assertInstanceOf(Statistics::class, $this->Statistics());
     }
 
     public function test_Incomes()

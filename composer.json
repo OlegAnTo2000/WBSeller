@@ -13,11 +13,28 @@
         "phpstan/phpstan"          : "^2.1",
         "friendsofphp/php-cs-fixer": "^3.86"
     },
+    "config": {
+        "process-timeout": 1800
+    },
     "scripts": {
         "test": "@test:unit",
-        "test:unit": "phpunit -c tests/phpunit.dist.xml --testsuite Unit",
-        "test:integration": "phpunit -c tests/phpunit.dist.xml --testsuite Integration",
-        "test:all": "phpunit -c tests/phpunit.dist.xml",
+        "test:unit": "@php -d memory_limit=512M vendor/bin/phpunit -c tests/phpunit.dist.xml --testsuite Unit --colors=always --testdox --testdox-summary --display-errors --display-warnings --display-deprecations --display-notices --display-incomplete --display-skipped",
+        "test:integration": "@php -d memory_limit=512M vendor/bin/phpunit -c tests/phpunit.xml --testsuite Integration --colors=always --testdox --testdox-summary --display-errors --display-warnings --display-deprecations --display-notices --display-incomplete --display-skipped",
+        "test:integration:section": "@test:integration --filter",
+        "test:integration:adv": "@test:integration --filter AdvTest",
+        "test:integration:analytics": "@test:integration --filter \"Analytics|Analitics\"",
+        "test:integration:calendar": "@test:integration --filter CalendarTest",
+        "test:integration:common": "@test:integration --filter Common",
+        "test:integration:content": "@test:integration --filter Content",
+        "test:integration:feedbacks": "@test:integration --filter Feedbacks",
+        "test:integration:marketplace": "@test:integration --filter Marketplace",
+        "test:integration:prices": "@test:integration --filter PricesTest",
+        "test:integration:questions": "@test:integration --filter Questions",
+        "test:integration:recommends": "@test:integration --filter RecommendsTest",
+        "test:integration:statistics": "@test:integration --filter StatisticsTest",
+        "test:integration:supplies": "@test:integration --filter SuppliesTest",
+        "test:integration:tariffs": "@test:integration --filter TariffsTest",
+        "test:all": "@php -d memory_limit=512M vendor/bin/phpunit -c tests/phpunit.xml --colors=always --testdox --testdox-summary --display-errors --display-warnings --display-deprecations --display-notices --display-incomplete --display-skipped",
         "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=4G"
     },
     "autoload": {

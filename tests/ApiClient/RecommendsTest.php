@@ -10,7 +10,7 @@ class RecommendationsTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Recommends::class, $this->API()->Recommends());
+        $this->assertInstanceOf(Recommends::class, $this->Recommends());
     }
 
     public function test_list()

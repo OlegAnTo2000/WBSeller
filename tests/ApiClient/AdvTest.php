@@ -19,7 +19,7 @@ class AdvTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Adv::class, $this->API()->Adv());
+        $this->assertInstanceOf(Adv::class, $this->Adv);
     }
 
     public function test_config()

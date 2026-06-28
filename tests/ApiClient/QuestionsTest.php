@@ -19,7 +19,7 @@ class QuestionsTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Questions::class, $this->API()->Questions());
+        $this->assertInstanceOf(Questions::class, $this->Questions());
     }
 
     public function test_unansweredCountByPeriod()

@@ -13,7 +13,7 @@ class CalendarTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Calendar::class, $this->API()->Calendar());
+        $this->assertInstanceOf(Calendar::class, $this->Calendar());
     }
 
     /**
@@ -21,7 +21,7 @@ class CalendarTest extends TestCase
      */
     public function test_promotions()
     {
-        $result = $this->API()->Calendar()
+        $result = $this->Calendar()
             ->promotions(new \DateTime('2024-07-01'), new \DateTime());
         $result = $this->decodeResponse($result);
 
@@ -33,7 +33,7 @@ class CalendarTest extends TestCase
      */
     public function test_promotionsDetails()
     {
-        $calendar = $this->API()->Calendar();
+        $calendar = $this->Calendar();
         $promotions = $calendar->promotions(
             new \DateTime('2024-09-01'),
             new \DateTime(),
@@ -54,7 +54,7 @@ class CalendarTest extends TestCase
      */
     public function test_promotionNomenclatures()
     {
-        $calendar = $this->API()->Calendar();
+        $calendar = $this->Calendar();
         $promotions = $calendar->promotions(
             new \DateTime('2024-09-01'),
             new \DateTime(),

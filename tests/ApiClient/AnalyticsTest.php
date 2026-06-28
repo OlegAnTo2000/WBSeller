@@ -19,7 +19,7 @@ class AnalyticsTest extends TestCase
 
     public function test_Class()
     {
-        $this->assertInstanceOf(Analytics::class, $this->API()->Analytics());
+        $this->assertInstanceOf(Analytics::class, $this->Analytics());
     }
 
     public function test_nmReportDetail()
