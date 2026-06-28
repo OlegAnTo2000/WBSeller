@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API;
 
+use Dakword\WBSeller\API\Attribute\NonRetryable;
+use Dakword\WBSeller\API\Attribute\Retryable;
+use Dakword\WBSeller\API\Auth\TokenClaimsValidator;
 use Dakword\WBSeller\API\Client;
-use Dakword\WBSeller\APIToken;
 use Dakword\WBSeller\Exception\ApiClientException;
 use Dakword\WBSeller\Exception\ApiTimeRestrictionsException;
-use Dakword\WBSeller\Exception\WBSellerException;
-use Dakword\WBSeller\Enum\ApiName;
 use Dakword\WBSeller\Enum\HttpMethod;
 use InvalidArgumentException;
+use ReflectionMethod;
 
 /**
  * Базовый класс для всех endpoint WB API.
@@ -21,7 +22,7 @@ use InvalidArgumentException;
  *   2. Валидацию токена: срок действия и права доступа к конкретному endpoint.
  *   3. Регистрацию middlewares и listeners из конфигурации API-фасада.
  *   4. Маршрутизацию HTTP-запросов (getRequest, postRequest и т.д.) через Client.
- *   5. Логику retry: автоматический повтор на 429 и 504 с задержкой.
+ *   5. Логику retry: автоматический повтор безопасных операций на 429 и 504 с задержкой.
  *   6. Обработку стандартных ошибок WB: 400 (временные ограничения), 401, 429, 504.
  *   7. Предоставление методов для чтения метаданных последнего ответа.
  *
@@ -86,7 +87,7 @@ abstract class AbstractEndpoint
         array   $listeners   = [],
         bool    $verifySsl   = true
     ) {
-        $this->validateToken($key);
+        (new TokenClaimsValidator())->validate($key, $this->apiName);
         $this->validateConfiguration($middlewares, $listeners);
 
         $this->locale   = $locale ?? 'ru';
@@ -179,7 +180,8 @@ abstract class AbstractEndpoint
      *
      * По умолчанию retry выключен. После вызова метода выполняется до 5 попыток
      * с задержкой 5 000 мс (5 секунд), если параметры не переданы явно.
-     * Retry срабатывает при ответах 429 (не "технический перерыв") и 504.
+     * Retry срабатывает при ответах 429 (не "технический перерыв") и 504,
+     * если операция допускает повтор.
      *
      * @param int $attempts Максимальное суммарное число попыток (не дополнительных retry)
      * @param int $delay    Задержка в миллисекундах между попытками
@@ -304,131 +306,68 @@ abstract class AbstractEndpoint
         array $addonHeaders = []
     ) {
         $attempt = 1;
+        $retryAllowed = $this->isRetryAllowed($method);
 
         while (true) {
-            $result = $this->Client->request($method, $path, $data, $addonHeaders);
+            try {
+                return $this->Client->request($method, $path, $data, $addonHeaders);
+            } catch (ApiClientException $exception) {
+                $status = $exception->statusCode();
+                $message = $exception->getMessage();
 
-            if (
-                $this->responseCode() == 400
-                && is_object($result)
-                && property_exists($result, 'errorText')
-                && is_string($result->errorText)
-                && mb_strpos(mb_strtolower($result->errorText), 'временные ограничения') !== false
-            ) {
-                throw new ApiTimeRestrictionsException($result->errorText);
-
-            } elseif ($this->responseCode() == 401) {
-                /*
-                 * "401 Unauthorized"
-                 *
-                 * (api-new) can\'t decode supplier key
-                 * (api-new) some chars in key are wrong
-                 * (api-new) supplier key not found
-                 * proxy: invalid token
-                 * proxy: unauthorized
-                 * request rejected, unathorized
-                 */
-                if (is_string($result)) {
-                    throw new ApiClientException($result, 401);
-                } elseif (is_object($result) && property_exists($result, 'errors') && count($result->errors)) {
-                    throw new ApiClientException($result->errors[0], 401);
-                } else {
-                    throw new ApiClientException('Unauthorized', 401);
+                if ($status === 400 && mb_strpos(mb_strtolower($message), 'временные ограничения') !== false) {
+                    throw new ApiTimeRestrictionsException($message, 400, $exception);
                 }
 
-            } elseif ($this->responseCode() == 429) {
-                /*
-                 * "429 Too Many Requests"
-                 *
-                 * { errors: ["Технический перерыв до 16:00"] }
-                 * { errors: ["(api-new) too many requests"] }
-                 * { code: 429, message: "" }
-                 */
-                if (is_object($result)
-                    && property_exists($result, 'errors')
-                    && is_array($result->errors)
-                    && isset($result->errors[0])
-                    && is_string($result->errors[0])
+                if ($status === 429 && mb_strpos(mb_strtolower($message), 'технический перерыв') !== false) {
+                    throw new ApiTimeRestrictionsException($message, 429, $exception);
+                }
+
+                if (!in_array($status, [429, 504], true)
+                    || !$retryAllowed
+                    || $attempt >= $this->attempts
                 ) {
-                    $message = $result->errors[0];
-                } elseif (is_object($result)
-                    && property_exists($result, 'message')
-                    && is_string($result->message)
-                ) {
-                    $message = $result->message;
-                } else {
-                    $message = 'Too many requests';
-                }
-
-                if (mb_strpos(mb_strtolower($message), 'технический перерыв') !== false) {
-                    throw new ApiTimeRestrictionsException($message);
-                }
-
-                if ($attempt >= $this->attempts) {
-                    throw new ApiClientException($message, 429);
+                    throw $exception;
                 }
 
                 usleep($this->retryDelay * 1_000);
                 $attempt++;
-                continue;
-
-            } elseif ($this->responseCode() == 504) {
-                /*
-                 * "504 Gateway Time-out"
-                 */
-                if ($attempt >= $this->attempts) {
-                    throw new ApiClientException('Gateway Time-out', 504);
-                }
-
-                usleep($this->retryDelay * 1_000);
-                $attempt++;
-                continue;
             }
-
-            return $result;
         }
     }
 
     /**
-     * Валидирует API-ключ если он имеет JWT-формат (три части через точку).
-     *
-     * Проверяет:
-     *   1. Корректность JWT — бросает ApiClientException(401) при ошибке формата.
-     *   2. Срок действия токена — бросает ApiClientException(401) если истёк.
-     *   3. Права доступа к текущему endpoint ($apiName) — бросает ApiClientException(403).
-     *
-     * Нестандартные ключи (не JWT) пропускаются без ошибки — это нормальная ситуация
-     * для тестовых или legacy-токенов WB.
-     *
-     * @throws ApiClientException При некорректном/истёкшем токене или отсутствии прав
+     * GET безопасен по умолчанию. Для остальных HTTP-методов retry должен быть
+     * явно разрешён атрибутом Retryable на публичном endpoint-методе.
+     * NonRetryable позволяет запретить retry для GET с побочным эффектом.
      */
-    private function validateToken(string $key): void
+    private function isRetryAllowed(HttpMethod $httpMethod): bool
     {
-        // Не JWT — пропускаем валидацию
-        if (substr_count($key, '.') !== 2) {
-            return;
+        foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $frame) {
+            $class = $frame['class'] ?? null;
+            $method = $frame['function'] ?? null;
+
+            if (!is_string($class) || !is_string($method) || $class === self::class || !method_exists($class, $method)) {
+                continue;
+            }
+
+            $reflection = new ReflectionMethod($class, $method);
+            if (!$reflection->isPublic()) {
+                continue;
+            }
+
+            if ($reflection->getAttributes(NonRetryable::class) !== []) {
+                return false;
+            }
+
+            if ($reflection->getAttributes(Retryable::class) !== []) {
+                return true;
+            }
+
+            break;
         }
 
-        try {
-            $token = new APIToken($key);
-        } catch (WBSellerException $e) {
-            throw new ApiClientException('Неверный формат API-токена', 401, $e);
-        }
-
-        if ($token->isExpired()) {
-            throw new ApiClientException(
-                sprintf('API токен истёк %s', $token->expireDate()->format('d.m.Y H:i')),
-                401
-            );
-        }
-
-        $apiName = $this->apiName !== '' ? ApiName::tryFrom($this->apiName) : null;
-        if ($this->apiName !== '' && ($apiName === null || !$token->accessTo($apiName))) {
-            throw new ApiClientException(
-                sprintf('Токен не имеет доступа к API "%s"', $this->apiName),
-                403
-            );
-        }
+        return $httpMethod === HttpMethod::GET;
     }
 
     private function validateConfiguration(array $middlewares, array $listeners): void

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller\API;
 
+use Dakword\WBSeller\Exception\ApiClientException;
+use Dakword\WBSeller\Exception\ApiTransportException;
 use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Query;
 use Dakword\WBSeller\Enum\HttpMethod;
 use InvalidArgumentException;
+use Psr\Http\Message\ResponseInterface;
+use Throwable;
 
 /**
  * HTTP-клиент для запросов к WildBerries API.
@@ -22,12 +25,12 @@ use InvalidArgumentException;
  *   - middleware-стека GuzzleHttp (HandlerStack)
  *   - событий onRequest / onResponse / onError для логирования
  *   - маскировки чувствительных заголовков в событиях
- *   - чтения rate-limit заголовков WB (`X-RateLimit-*`)
+ *   - чтения rate-limit заголовков WB (`X-Ratelimit-*`)
  *
  * После каждого вызова `request()` публичные свойства содержат метаданные ответа.
- * Для HTTP-ошибки с валидным JSON-телом клиент заполняет свойства, вызывает
- * onError и возвращает декодированное тело. Для ошибки с не-JSON-телом свойства
- * также заполняются, после чего исходное Guzzle-исключение пробрасывается наружу.
+ * Для любой HTTP-ошибки клиент заполняет свойства, вызывает onError и выбрасывает
+ * ApiClientException. Сетевые и middleware-ошибки преобразуются в
+ * ApiTransportException. Исходное исключение доступно через getPrevious().
  *
  * Таймаут: 60 сек. на ответ, 15 сек. на соединение. SSL-верификация настраивается
  * через конструктор и по умолчанию включена.
@@ -51,13 +54,13 @@ class Client
     /** JSON с естественным PHP-типом, null для пустого тела, строка для невалидного JSON. */
     public $response               = null;
 
-    /** Лимит запросов в окне (X-RateLimit-Limit). 0 если заголовок отсутствует. */
+    /** Лимит запросов в окне (X-Ratelimit-Limit). 0 если заголовок отсутствует. */
     public int $rateLimit          = 0;
-    /** Оставшееся количество запросов в текущем окне (X-RateLimit-Remaining). */
+    /** Оставшееся количество запросов в текущем окне (X-Ratelimit-Remaining). */
     public int $rateRemaining      = 0;
-    /** Unix-timestamp сброса счётчика rate limit (X-RateLimit-Reset). */
+    /** Unix-timestamp сброса счётчика rate limit (X-Ratelimit-Reset). */
     public int $rateReset          = 0;
-    /** Рекомендуемое время ожидания в секундах при превышении лимита (X-RateLimit-Retry). */
+    /** Рекомендуемое время ожидания в секундах при превышении лимита (X-Ratelimit-Retry). */
     public int $rateRetry          = 0;
 
     /** Текущий прокси URL. Можно менять между запросами через setProxyUrl(). */
@@ -113,9 +116,8 @@ class Client
      * Перед запросом сбрасываются все публичные поля ответа.
      * После запроса — заполняются кодом, заголовками, телом и rate-limit данными.
      *
-     * При HTTP-ошибке свойства заполняются из ответа. Валидное JSON-тело
-     * возвращается как обычный результат после вызова onError. Для не-JSON-тела
-     * исходное Guzzle-исключение пробрасывается наружу.
+     * При HTTP-ошибке свойства заполняются из ответа, после чего выбрасывается
+     * ApiClientException независимо от формата тела.
      *
      * Для GET-запросов параметры передаются в query string через Guzzle Query::build.
      * Для остальных методов — сериализуются в JSON-тело.
@@ -125,7 +127,8 @@ class Client
      * @param array  $params      Параметры запроса (query для GET, body для остальных)
      * @param array  $addonHeaders Дополнительные заголовки, мержатся с дефолтными
      * @return mixed JSON с естественным PHP-типом, null для пустого тела или строка для невалидного JSON
-     * @throws RequestException При сетевой ошибке или HTTP-ошибке с не-JSON-телом
+     * @throws ApiClientException При любом HTTP-ответе 4xx/5xx
+     * @throws ApiTransportException При сетевой или middleware-ошибке
      * @throws InvalidArgumentException При неподдерживаемом методе
      */
     public function request(
@@ -135,6 +138,10 @@ class Client
         array $addonHeaders = []
     ) {
         $method = $method instanceof HttpMethod ? $method->value : strtoupper($method);
+        $httpMethod = HttpMethod::tryFrom($method);
+        if ($httpMethod === null) {
+            throw new InvalidArgumentException('Unsupported request method: ' . $method);
+        }
 
         $this->responseCode    = 0;
         $this->responsePhrase  = null;
@@ -169,7 +176,7 @@ class Client
         ]);
 
         try {
-            switch (HttpMethod::tryFrom($method)) {
+            switch ($httpMethod) {
                 case HttpMethod::GET:
                     $response = $this->Client->get($url, [
                         'headers' => $headers,
@@ -214,76 +221,42 @@ class Client
                     ] + $proxyOption);
                     break;
 
-                default:
-                    throw new InvalidArgumentException('Unsupported request method: ' . $method);
             }
-        } catch (RequestException | ClientException $exc) {
+        } catch (RequestException $exc) {
             if ($exc->hasResponse()) {
                 $resp = $exc->getResponse();
-        
-                $this->responseCode    = $resp->getStatusCode();
-                $this->responsePhrase  = $resp->getReasonPhrase();
-                $this->responseHeaders = $resp->getHeaders();
-        
-                $this->rateLimit     = (int) $resp->getHeaderLine('X-RateLimit-Limit') ?: 0;
-                $this->rateRemaining = (int) $resp->getHeaderLine('X-RateLimit-Remaining') ?: 0;
-                $this->rateReset     = (int) $resp->getHeaderLine('X-RateLimit-Reset') ?: 0;
-                $this->rateRetry     = (int) $resp->getHeaderLine('X-RateLimit-Retry') ?: 0;
-        
-                $body = (string) $resp->getBody();
-                $this->rawResponse = $body;
-        
-                $decoded = $this->decodeResponse($body);
-                if ($this->isJson($body)) {
-                    $this->response = $decoded;
-        
-                    $durationMs = (int)((microtime(true) - $startedAt) * 1000);
-                    $this->emit($this->onError, [
-                        'request_id'      => $requestId,
-                        'method'          => $method,
-                        'url'             => $url,
-                        'status'          => $this->responseCode,
-                        'raw'             => $this->rawResponse,
-                        'duration_ms'     => $durationMs,
-                        'exception_class' => get_class($exc),
-                        'message'         => $exc->getMessage(),
-                    ]);
+                $this->captureResponse($resp);
+                $message = $this->errorMessage($this->response, $this->responsePhrase);
 
-                    return $decoded;
-                }
-
-                // Ответ есть, но его тело не является JSON: фиксируем ошибку и пробрасываем исключение.
-                $durationMs = (int)((microtime(true) - $startedAt) * 1000);
                 $this->emit($this->onError, [
                     'request_id'      => $requestId,
                     'method'          => $method,
                     'url'             => $url,
-                    'status'          => null,
-                    'raw'             => null,
-                    'duration_ms'     => $durationMs,
+                    'status'          => $this->responseCode,
+                    'raw'             => $this->rawResponse,
+                    'duration_ms'     => (int) ((microtime(true) - $startedAt) * 1000),
                     'exception_class' => get_class($exc),
-                    'message'         => $exc->getMessage(),
+                    'message'         => $message,
                 ]);
-        
-                $this->response = $decoded;
+
+                throw new ApiClientException(
+                    $message,
+                    $this->responseCode,
+                    $exc,
+                    $this->response,
+                    $this->rawResponse,
+                    $this->responseHeaders,
+                );
             }
-        
-            throw $exc;
+
+            $this->emitTransportError($requestId, $method, $url, $startedAt, $exc);
+            throw new ApiTransportException($exc->getMessage(), 0, $exc);
+        } catch (Throwable $exc) {
+            $this->emitTransportError($requestId, $method, $url, $startedAt, $exc);
+            throw new ApiTransportException($exc->getMessage(), 0, $exc);
         }
 
-        $this->responseCode    = $response->getStatusCode();
-        $this->responsePhrase  = $response->getReasonPhrase();
-        $this->responseHeaders = $response->getHeaders();
-
-        $this->rateLimit     = (int) $response->getHeaderLine('X-RateLimit-Limit') ?: 0;
-        $this->rateRemaining = (int) $response->getHeaderLine('X-RateLimit-Remaining') ?: 0;
-        $this->rateReset     = (int) $response->getHeaderLine('X-RateLimit-Reset') ?: 0;
-        $this->rateRetry     = (int) $response->getHeaderLine('X-RateLimit-Retry') ?: 0;
-
-        $responseContent = (string) $response->getBody();
-        $this->rawResponse = $responseContent;
-
-        $this->response = $this->decodeResponse($responseContent);
+        $this->captureResponse($response);
 
         $durationMs = (int)((microtime(true) - $startedAt) * 1000);
         $this->emit($this->onResponse, [
@@ -299,6 +272,56 @@ class Client
         return $this->response;
     }
 
+    private function captureResponse(ResponseInterface $response): void
+    {
+        $this->responseCode = $response->getStatusCode();
+        $this->responsePhrase = $response->getReasonPhrase();
+        $this->responseHeaders = $response->getHeaders();
+        $this->rateLimit = (int) $response->getHeaderLine('X-Ratelimit-Limit');
+        $this->rateRemaining = (int) $response->getHeaderLine('X-Ratelimit-Remaining');
+        $this->rateReset = (int) $response->getHeaderLine('X-Ratelimit-Reset');
+        $this->rateRetry = (int) $response->getHeaderLine('X-Ratelimit-Retry');
+        $this->rawResponse = (string) $response->getBody();
+        $this->response = $this->decodeResponse($this->rawResponse);
+    }
+
+    private function errorMessage(mixed $body, ?string $fallback): string
+    {
+        if (is_object($body) && isset($body->errors[0]) && is_string($body->errors[0])) {
+            return $body->errors[0];
+        }
+        if (is_object($body) && isset($body->errorText) && is_string($body->errorText)) {
+            return $body->errorText;
+        }
+        if (is_object($body) && isset($body->message) && is_string($body->message) && $body->message !== '') {
+            return $body->message;
+        }
+        if (is_string($body) && $body !== '') {
+            return $body;
+        }
+
+        return $fallback ?: 'HTTP request failed';
+    }
+
+    private function emitTransportError(
+        string $requestId,
+        string $method,
+        string $url,
+        float $startedAt,
+        Throwable $exception,
+    ): void {
+        $this->emit($this->onError, [
+            'request_id' => $requestId,
+            'method' => $method,
+            'url' => $url,
+            'status' => null,
+            'raw' => null,
+            'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            'exception_class' => get_class($exception),
+            'message' => $exception->getMessage(),
+        ]);
+    }
+
     /**
      * JSON сохраняет естественный тип, пустое тело становится null,
      * невалидный JSON возвращается исходной строкой.
@@ -312,17 +335,6 @@ class Client
         $decoded = json_decode($body);
 
         return json_last_error() === JSON_ERROR_NONE ? $decoded : $body;
-    }
-
-    private function isJson(string $body): bool
-    {
-        if ($body === '') {
-            return false;
-        }
-
-        json_decode($body);
-
-        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**

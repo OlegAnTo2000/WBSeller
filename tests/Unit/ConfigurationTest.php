@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Dakword\WBSeller\Tests\Unit;
 
 use Dakword\WBSeller\API;
-use Dakword\WBSeller\Exception\ApiClientException;
+use Dakword\WBSeller\API\Auth\TokenClaimsValidator;
+use Dakword\WBSeller\Exception\LocalTokenValidationException;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -33,10 +34,25 @@ class ConfigurationTest extends TestCase
 
     public function testMalformedJwtIsRejectedBeforeRequest(): void
     {
-        $this->expectException(ApiClientException::class);
+        $this->expectException(LocalTokenValidationException::class);
         $this->expectExceptionCode(401);
 
         (new API(['masterkey' => 'invalid.invalid.invalid']))->Test();
+    }
+
+    public function testLocalClaimsValidationDoesNotPretendToVerifySignature(): void
+    {
+        $payload = $this->base64UrlEncode(json_encode([
+            'exp' => time() + 3600,
+            's' => 0,
+            'sid' => 'seller-id',
+            'acc' => 1,
+            't' => false,
+        ], JSON_THROW_ON_ERROR));
+
+        (new TokenClaimsValidator())->validate('header.' . $payload . '.unverified-signature');
+
+        self::addToAssertionCount(1);
     }
 
     public function testNonCallableMiddlewareIsRejected(): void
@@ -81,5 +97,10 @@ class ConfigurationTest extends TestCase
         ]);
 
         self::assertSame([$listener], $api->getListeners()['request']);
+    }
+
+    private function base64UrlEncode(string $value): string
+    {
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 }

@@ -6,9 +6,12 @@ namespace Dakword\WBSeller\Tests\Unit;
 
 use Dakword\WBSeller\API\Client;
 use Dakword\WBSeller\Enum\HttpMethod;
+use Dakword\WBSeller\Exception\ApiClientException;
+use Dakword\WBSeller\Exception\ApiTransportException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -46,20 +49,55 @@ class ClientTest extends TestCase
         self::assertSame(200, $client->responseCode);
     }
 
-    public function testEmptyErrorBodyIsStoredAsNull(): void
+    public static function errorResponses(): array
     {
-        $client = $this->clientWithResponses(new Response(400, [], ''));
+        $cases = [];
+        foreach ([400, 401, 429, 500, 504] as $status) {
+            $cases["{$status} JSON"] = [$status, '{"message":"failure"}', (object) ['message' => 'failure'], 'failure'];
+            $cases["{$status} text"] = [$status, 'plain failure', 'plain failure', 'plain failure'];
+            $cases["{$status} empty"] = [$status, '', null, (new Response($status))->getReasonPhrase()];
+        }
+
+        return $cases;
+    }
+
+    #[DataProvider('errorResponses')]
+    public function testHttpErrorsHaveSamePackageContract(
+        int $status,
+        string $body,
+        mixed $decoded,
+        string $message,
+    ): void {
+        $client = $this->clientWithResponses(new Response($status, ['Content-Type' => 'text/plain'], $body));
 
         try {
             $client->request(HttpMethod::GET, '/test');
             self::fail('Ожидалось HTTP-исключение');
-        } catch (ClientException) {
-            self::assertNull($client->response);
-            self::assertSame('', $client->rawResponse);
+        } catch (ApiClientException $exception) {
+            self::assertSame($status, $exception->statusCode());
+            self::assertEquals($decoded, $exception->responseBody());
+            self::assertSame($body, $exception->rawResponse());
+            self::assertSame($message, $exception->getMessage());
+            self::assertNotNull($exception->getPrevious());
+            self::assertEquals($decoded, $client->response);
         }
     }
 
-    private function clientWithResponses(Response ...$responses): Client
+    public function testTransportErrorIsNormalized(): void
+    {
+        $request = new Request('GET', 'https://example.test/test');
+        $client = $this->clientWithResponses(new ConnectException('DNS failed', $request));
+
+        try {
+            $client->request(HttpMethod::GET, '/test');
+            self::fail('Ожидалось транспортное исключение');
+        } catch (ApiTransportException $exception) {
+            self::assertInstanceOf(ConnectException::class, $exception->getPrevious());
+            self::assertSame('DNS failed', $exception->getMessage());
+        }
+    }
+
+    private function clientWithResponses(Response|\Throwable ...$responses): Client
     {
         $stack = HandlerStack::create(new MockHandler($responses));
 
