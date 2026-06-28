@@ -14,7 +14,10 @@
         "friendsofphp/php-cs-fixer": "^3.86"
     },
     "scripts": {
-        "test": "vendor/bin/phpunit -v -c tests/phpunit.xml tests",
+        "test": "@test:unit",
+        "test:unit": "phpunit -c tests/phpunit.dist.xml --testsuite Unit",
+        "test:integration": "phpunit -c tests/phpunit.dist.xml --testsuite Integration",
+        "test:all": "phpunit -c tests/phpunit.dist.xml",
         "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=4G"
     },
     "autoload": {

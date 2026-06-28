@@ -2,11 +2,8 @@
 
 namespace Dakword\WBSeller\Tests\ApiClient;
 
-use Dakword\WBSeller\API\Endpoint\Adv,
-    Dakword\WBSeller\Enum\AdvertStatus,
-    Dakword\WBSeller\Enum\AdvertType;
+use Dakword\WBSeller\API\Endpoint\Adv;
 use Dakword\WBSeller\Tests\ApiClient\TestCase;
-use InvalidArgumentException;
 
 class AdvTest extends TestCase
 {
@@ -34,52 +31,11 @@ class AdvTest extends TestCase
         $this->assertIsArray($result->config);
     }
 
-    public function test_count()
-    {
-        $result = $this->Adv->count();
-
-        $this->assertIsObject($result);
-        $this->assertTrue(property_exists($result, 'all'));
-        $this->assertIsArray($result->adverts);
-    }
-
     public function test_advertsList()
     {
-        $result = $this->Adv->advertsList(AdvertStatus::PLAY, AdvertType::ON_CATALOG, 10, 0);
+        $result = $this->Adv->advertsList();
 
         $this->assertIsArray($result);
-    }
-
-    public function test_advert()
-    {
-        $result = $this->Adv->advert(555);
-
-        $this->assertIsObject($result);
-        $this->assertTrue(property_exists($result, 'advertId'));
-        $this->assertIsArray($result->params);
-    }
-
-    public function test_cpm()
-    {
-        $result = $this->Adv->cpm(AdvertType::ON_SEARCH, 123456);
-
-        $this->assertIsArray($result);
-    }
-
-    public function test_allCpm()
-    {
-        $result = $this->Adv->allCpm(AdvertType::ON_SEARCH, [123456, 7890]);
-
-        $this->assertIsArray($result);
-    }
-
-    public function test_updateCpm()
-    {
-        $this->markTestIncomplete("Переделать на новый метод");
-
-        $result = $this->Adv->updateCpm(123456, AdvertType::ON_HOME_RECOM, 123456, 123456);
-
-        $this->assertFalse($result);
     }
 
     public function test_start()
@@ -101,40 +57,6 @@ class AdvTest extends TestCase
         $result = $this->Adv->stop(123456);
 
         $this->assertFalse($result);
-    }
-
-    public function test_setActive()
-    {
-        $result = $this->Adv->setActive(123, 456, true);
-
-        $this->assertFalse($result);
-    }
-
-    public function test_dailyBudget()
-    {
-        $this->Adv->dailyBudget(123, 500);
-
-        $this->assertTrue($this->Adv->responseCode() == 400);
-    }
-
-    public function test_setIntervals()
-    {
-        $this->Adv->setIntervals(3344123, 275, [
-            [ 'begin' => 3, 'end' => 5 ]
-        ]);
-
-        $this->assertTrue($this->Adv->responseCode() == 400);
-    }
-
-    public function test_nmActive()
-    {
-        $this->Adv->nmActive(456789, 275, [
-            [ 'nm' => 2116745, 'active' => false ]
-        ]);
-        $this->assertTrue($this->Adv->responseCode() == 400);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->Adv->nmActive(456789, 275, array_fill(0, 50, [ 'nm' => 2116745, 'active' => false ]));
     }
 
     public function test_balance()

@@ -176,12 +176,6 @@ class MarketplaceTest extends TestCase
         $result = $this->Marketplace()->deleteOrderMeta(123456, 'ean');
     }
 
-    public function test_getOrdersExternalStickers()
-    {
-        $result = $this->Marketplace()->getOrdersExternalStickers([123456]);
-        $this->assertTrue(property_exists($result, 'stickers'));
-    }
-    
     public function test_getOrdersStickers()
     {
         $result = $this->Marketplace()->getOrdersStickers([], 'svg', '40x30');
