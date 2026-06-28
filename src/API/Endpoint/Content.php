@@ -28,7 +28,7 @@ class Content extends AbstractEndpoint
     /**
      * Сервис для работы с корзиной.
      *
-     * @return Tags
+     * @return Trash
      */
     public function Trash(): Trash
     {
@@ -186,7 +186,7 @@ class Content extends AbstractEndpoint
      * "Список несозданных НМ с ошибками". Для того чтобы убрать НМ из ошибочных, необходимо повторно сделать запрос
      * с исправленными ошибками.
      *
-     * @param int    $imtID imtID КТ, к которой добавляется НМ
+     * @param string $imtID imtID КТ, к которой добавляется НМ
      * @param array  $cards Массив НМ которые хотим добавить к КТ [
      * 		                  { vendorCode: string, characteristics: [ object, object, ...], sizes: [ object, object, ...] }, ...
      *                      ]
@@ -462,7 +462,7 @@ class Content extends AbstractEndpoint
      *
      * С помощью данного метода можно получить список характеристик для определенной категории товаров.
      *
-     * @param string $objectId Идентификатор предмета
+     * @param int $objectId Идентификатор предмета
      *
      * @return object {
      *      data: [object, ...],
@@ -575,8 +575,8 @@ class Content extends AbstractEndpoint
      *
      * С помощью данного метода можно получить список ТНВЭД кодов по ID предмета и фильтру по тнвэд коду.
      *
-     * @param string $subjectID Идентификатор предмета
-     * @param int    $search    Поиск по ТНВЭД-коду. Работает только в паре с subjectID
+     * @param int    $subjectID Идентификатор предмета
+     * @param string $search    Поиск по ТНВЭД-коду. Работает только в паре с subjectID
      *
      * @return object {
      *      data: [object, ... ],

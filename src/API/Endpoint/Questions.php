@@ -26,8 +26,8 @@ class Questions extends AbstractEndpoint
     /**
      * Количество необработанных вопросов за период
      *
-     * @param DateTime $dateFrom Дата начала периода
-     * @param DateTime $dateTo   Дата окончания периода
+     * @param \DateTime $dateFrom Дата начала периода
+     * @param \DateTime $dateTo   Дата окончания периода
      *
      * @return object {
      * 	    data: int,
@@ -46,8 +46,8 @@ class Questions extends AbstractEndpoint
     /**
      * Количество обработанных вопросов за период
      *
-     * @param DateTime $dateFrom Дата начала периода
-     * @param DateTime $dateTo   Дата окончания периода
+     * @param \DateTime $dateFrom Дата начала периода
+     * @param \DateTime $dateTo   Дата окончания периода
      *
      * @return object {
      * 	    data: int,
@@ -101,8 +101,8 @@ class Questions extends AbstractEndpoint
      * @param bool        $isAnswered           Отвеченные вопросы (true) или неотвеченные вопросы (false)
      * @param int         $nmId                 Идентификатор номенклатуры
      * @param string|null $order                Сортировка отзывов по дате "dateAsc" / "dateDesc"
-     * @param DateTime    $dateFrom             Дата начала периода
-     * @param DateTime    $dateTo               Дата окончания периода
+     * @param \DateTime|null $dateFrom          Дата начала периода
+     * @param \DateTime|null $dateTo            Дата окончания периода
      *
      * @return object {
      * 	    data: {countUnanswered: int, countArchive: int, questions: [object, ...]},

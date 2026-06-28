@@ -79,7 +79,7 @@ class Marketplace extends AbstractEndpoint
     /**
      * Создание новой поставки
      *
-     * @param int $name Наименование поставки
+     * @param string $name Наименование поставки
      *
      * @return object Объект с идентификатором поставки {id: string}
      *

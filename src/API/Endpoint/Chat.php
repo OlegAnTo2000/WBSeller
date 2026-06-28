@@ -37,7 +37,7 @@ class Chat extends AbstractEndpoint
      * addTimestamp из последнего полученного события.
      * @see https://openapi.wb.ru/buyers-chat/api/ru/#/paths/~1api~1v1~1seller~1events/get
      * 
-     * @param string $next Пагинатор. С какого момента получить следующий пакет данных.
+     * @param int $next Пагинатор. С какого момента получить следующий пакет данных.
      *                     Формат Unix timestamp с миллисекундами
      * 
      * @return object {
