@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller;
 
+use Dakword\WBSeller\Enum\ApiName;
 use Dakword\WBSeller\Exception\WBSellerException;
 use DateTime;
 
@@ -105,9 +106,16 @@ class APIToken
         if (count($parts) !== 3) {
             throw new WBSellerException('Неверный формат токена');
         }
-        $this->payload = json_decode(base64_decode($parts[1]));
+        $encodedPayload = strtr($parts[1], '-_', '+/');
+        $encodedPayload .= str_repeat('=', (4 - strlen($encodedPayload) % 4) % 4);
+        $decodedPayload = base64_decode($encodedPayload, true);
+        if ($decodedPayload === false) {
+            throw new WBSellerException('Неверный формат токена');
+        }
 
-        if (json_last_error() != JSON_ERROR_NONE) {
+        $this->payload = json_decode($decodedPayload);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_object($this->payload)) {
             throw new WBSellerException('Неверный формат токена');
         }
 
@@ -261,8 +269,9 @@ class APIToken
      * Endpoint с позицией 0 (common, tariffs) всегда возвращают true.
      * Неизвестное имя endpoint → возвращает false.
      */
-    public function accessTo(string $apiName): bool
+    public function accessTo(string|ApiName $apiName): bool
     {
+        $apiName = $apiName instanceof ApiName ? $apiName->value : $apiName;
         $position = $this->apiFlagPosition[$apiName] ?? null;
         if (is_null($position)) {
             return false;
@@ -279,7 +288,7 @@ class APIToken
      * Возвращает true только если токен имеет доступ ко ВСЕМ перечисленным endpoint.
      * Пример: `$token->hasAccess('content', 'prices', 'analytics')`
      */
-    public function hasAccess(string ...$apiNames): bool
+    public function hasAccess(string|ApiName ...$apiNames): bool
     {
         foreach ($apiNames as $apiName) {
             if (!$this->accessTo($apiName)) {

@@ -98,6 +98,11 @@ class API
      *     'middleware_name' => callable,
      *     callable,
      *   ],
+     *   'listeners' => [
+     *     'request' => [callable],
+     *     'response' => [callable],
+     *     'error' => [callable],
+     *   ],
      *   'proxy' => 'http://122.123.123.123:8088',
      *   'ssl_verify' => true,
      * ]
@@ -119,8 +124,20 @@ class API
             }
         }
 
-        if (isset($options['middlewares']) && is_array($options['middlewares'])) {
+        if (array_key_exists('middlewares', $options)) {
+            if (!is_array($options['middlewares'])) {
+                throw new \InvalidArgumentException('Параметр middlewares должен быть массивом');
+            }
+            foreach ($options['middlewares'] as $middleware) {
+                if (!is_callable($middleware)) {
+                    throw new \InvalidArgumentException('Каждый middleware должен быть callable');
+                }
+            }
             $this->middlewares = $options['middlewares'];
+        }
+
+        if (array_key_exists('listeners', $options)) {
+            $this->listeners = $this->validateListeners($options['listeners']);
         }
 
         if (isset($options['proxy']) && is_string($options['proxy'])) {
@@ -190,6 +207,31 @@ class API
     public function getListeners(): array
     {
         return $this->listeners;
+    }
+
+    private function validateListeners(mixed $listeners): array
+    {
+        if (!is_array($listeners)) {
+            throw new \InvalidArgumentException('Параметр listeners должен быть массивом');
+        }
+
+        $validated = ['request' => [], 'response' => [], 'error' => []];
+        foreach ($listeners as $event => $callbacks) {
+            if (!is_string($event) || !array_key_exists($event, $validated)) {
+                throw new \InvalidArgumentException('Неизвестный тип listener: ' . (string) $event);
+            }
+            if (!is_array($callbacks)) {
+                throw new \InvalidArgumentException(sprintf('Listeners "%s" должны быть массивом', $event));
+            }
+            foreach ($callbacks as $callback) {
+                if (!is_callable($callback)) {
+                    throw new \InvalidArgumentException(sprintf('Каждый listener "%s" должен быть callable', $event));
+                }
+            }
+            $validated[$event] = $callbacks;
+        }
+
+        return $validated;
     }
 
     /**

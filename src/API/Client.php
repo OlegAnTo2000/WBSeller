@@ -10,6 +10,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Query;
+use Dakword\WBSeller\Enum\HttpMethod;
 use InvalidArgumentException;
 
 /**
@@ -24,10 +25,14 @@ use InvalidArgumentException;
  *   - чтения rate-limit заголовков WB (`X-RateLimit-*`)
  *
  * После каждого вызова `request()` публичные свойства содержат метаданные ответа.
- * При HTTP-ошибке (4xx/5xx) Guzzle бросает исключение, но свойства (`responseCode`,
- * `response`, `rawResponse`) всё равно заполняются из тела ошибочного ответа.
+ * Для HTTP-ошибки с валидным JSON-телом клиент заполняет свойства, вызывает
+ * onError и возвращает декодированное тело. Для ошибки с не-JSON-телом свойства
+ * также заполняются, после чего исходное Guzzle-исключение пробрасывается наружу.
  *
- * Таймаут: 60 сек. на ответ, 15 сек. на соединение. SSL-верификация отключена.
+ * Таймаут: 60 сек. на ответ, 15 сек. на соединение. SSL-верификация настраивается
+ * через конструктор и по умолчанию включена.
+ * Сам Client не выполняет retry: эта логика находится в AbstractEndpoint и
+ * по умолчанию выключена.
  *
  * Подводный камень: экземпляр HttpClient создаётся один раз в конструкторе,
  * но прокси передаётся в каждый запрос отдельно — поэтому смена `$proxyUrl`
@@ -43,7 +48,7 @@ class Client
     public array $responseHeaders  = [];
     /** Сырое тело ответа в виде строки (null до первого запроса). */
     public ?string $rawResponse    = null;
-    /** Декодированное тело ответа: object если ответ был JSON, string иначе. */
+    /** JSON с естественным PHP-типом, null для пустого тела, строка для невалидного JSON. */
     public $response               = null;
 
     /** Лимит запросов в окне (X-RateLimit-Limit). 0 если заголовок отсутствует. */
@@ -73,13 +78,13 @@ class Client
         string $baseUrl,
         string $apiKey,
         ?string $proxyUrl = null,
-        bool $verifySsl = true
+        bool $verifySsl = true,
+        ?HandlerStack $stack = null
     ) {
         $this->baseUrl  = rtrim($baseUrl, '/');
         $this->apiKey   = $apiKey;
         $this->proxyUrl = $proxyUrl;
-        $this->stack    = new HandlerStack();
-        $this->stack->setHandler(new CurlHandler());
+        $this->stack = $stack ?? new HandlerStack(new CurlHandler());
 
         $this->Client = new HttpClient([
             'timeout'         => 60,
@@ -108,27 +113,29 @@ class Client
      * Перед запросом сбрасываются все публичные поля ответа.
      * После запроса — заполняются кодом, заголовками, телом и rate-limit данными.
      *
-     * При HTTP-ошибке: свойства заполняются из ответа ошибки, затем
-     * пробрасывается оригинальное Guzzle-исключение (не подавляется).
-     * Если тело ошибочного ответа — валидный JSON, он доступен через `$this->response`.
+     * При HTTP-ошибке свойства заполняются из ответа. Валидное JSON-тело
+     * возвращается как обычный результат после вызова onError. Для не-JSON-тела
+     * исходное Guzzle-исключение пробрасывается наружу.
      *
      * Для GET-запросов параметры передаются в query string через Guzzle Query::build.
      * Для остальных методов — сериализуются в JSON-тело.
      *
-     * @param string $method      HTTP-метод (GET, POST, PUT, PATCH, DELETE, MULTIPART)
+     * @param string|HttpMethod $method HTTP-метод (GET, POST, PUT, PATCH, DELETE, MULTIPART)
      * @param string $path        Путь относительно baseUrl (например `/api/v3/orders`)
      * @param array  $params      Параметры запроса (query для GET, body для остальных)
      * @param array  $addonHeaders Дополнительные заголовки, мержатся с дефолтными
-     * @return mixed Декодированный JSON (object/array) или строка при не-JSON ответе
-     * @throws RequestException При сетевой ошибке или HTTP-ошибочном ответе
+     * @return mixed JSON с естественным PHP-типом, null для пустого тела или строка для невалидного JSON
+     * @throws RequestException При сетевой ошибке или HTTP-ошибке с не-JSON-телом
      * @throws InvalidArgumentException При неподдерживаемом методе
      */
     public function request(
-        string $method,
+        string|HttpMethod $method,
         string $path,
         array $params = [],
         array $addonHeaders = []
     ) {
+        $method = $method instanceof HttpMethod ? $method->value : strtoupper($method);
+
         $this->responseCode    = 0;
         $this->responsePhrase  = null;
         $this->responseHeaders = [];
@@ -155,50 +162,50 @@ class Client
 
         $this->emit($this->onRequest, [
             'id'      => $requestId,
-            'method'  => strtoupper($method),
+            'method'  => $method,
             'url'     => $url,
             'headers' => $this->maskHeaders($headers),   // лучше заранее замаскировать Authorization
             'params'  => $params,                        // или null если не хочешь логировать
         ]);
 
         try {
-            switch (strtoupper($method)) {
-                case 'GET':
+            switch (HttpMethod::tryFrom($method)) {
+                case HttpMethod::GET:
                     $response = $this->Client->get($url, [
                         'headers' => $headers,
                         'query' => Query::build($params),
                     ] + $proxyOption);
                     break;
 
-                case 'POST':
+                case HttpMethod::POST:
                     $response = $this->Client->post($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
                     ] + $proxyOption);
                     break;
 
-                case 'PUT':
+                case HttpMethod::PUT:
                     $response = $this->Client->put($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
                     ] + $proxyOption);
                     break;
 
-                case 'PATCH':
+                case HttpMethod::PATCH:
                     $response = $this->Client->patch($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
                     ] + $proxyOption);
                     break;
 
-                case 'DELETE':
+                case HttpMethod::DELETE:
                     $response = $this->Client->delete($url, [
                         'headers' => $headers,
                         'body' => json_encode($params)
                     ] + $proxyOption);
                     break;
 
-                case 'MULTIPART':
+                case HttpMethod::MULTIPART:
                     $response = $this->Client->post($url, [
                         'headers' => array_merge([
                             'Authorization' => $this->apiKey,
@@ -208,7 +215,7 @@ class Client
                     break;
 
                 default:
-                    throw new InvalidArgumentException('Unsupported request method: ' . strtoupper($method));
+                    throw new InvalidArgumentException('Unsupported request method: ' . $method);
             }
         } catch (RequestException | ClientException $exc) {
             if ($exc->hasResponse()) {
@@ -226,14 +233,14 @@ class Client
                 $body = (string) $resp->getBody();
                 $this->rawResponse = $body;
         
-                $jsonDecoded = json_decode($body);
-                if (!json_last_error()) {
-                    $this->response = $jsonDecoded;
+                $decoded = $this->decodeResponse($body);
+                if ($this->isJson($body)) {
+                    $this->response = $decoded;
         
                     $durationMs = (int)((microtime(true) - $startedAt) * 1000);
                     $this->emit($this->onError, [
                         'request_id'      => $requestId,
-                        'method'          => strtoupper($method),
+                        'method'          => $method,
                         'url'             => $url,
                         'status'          => $this->responseCode,
                         'raw'             => $this->rawResponse,
@@ -242,14 +249,14 @@ class Client
                         'message'         => $exc->getMessage(),
                     ]);
 
-                    return $jsonDecoded;
+                    return $decoded;
                 }
 
-                // exception без response (timeout, DNS и т.п.)
+                // Ответ есть, но его тело не является JSON: фиксируем ошибку и пробрасываем исключение.
                 $durationMs = (int)((microtime(true) - $startedAt) * 1000);
                 $this->emit($this->onError, [
                     'request_id'      => $requestId,
-                    'method'          => strtoupper($method),
+                    'method'          => $method,
                     'url'             => $url,
                     'status'          => null,
                     'raw'             => null,
@@ -258,8 +265,7 @@ class Client
                     'message'         => $exc->getMessage(),
                 ]);
         
-                // если тело не JSON — оставим строкой в response (удобно для логов)
-                $this->response = $body;
+                $this->response = $decoded;
             }
         
             throw $exc;
@@ -277,14 +283,12 @@ class Client
         $responseContent = (string) $response->getBody();
         $this->rawResponse = $responseContent;
 
-        $jsonDecoded = json_decode($responseContent);
-
-        $this->response = (json_last_error() ? $responseContent : $jsonDecoded);
+        $this->response = $this->decodeResponse($responseContent);
 
         $durationMs = (int)((microtime(true) - $startedAt) * 1000);
         $this->emit($this->onResponse, [
             'request_id'  => $requestId,
-            'method'      => strtoupper($method),
+            'method'      => $method,
             'url'         => $url,
             'status'      => $this->responseCode,
             'headers'     => $this->maskHeaders($this->responseHeaders),
@@ -293,6 +297,32 @@ class Client
         ]);
 
         return $this->response;
+    }
+
+    /**
+     * JSON сохраняет естественный тип, пустое тело становится null,
+     * невалидный JSON возвращается исходной строкой.
+     */
+    private function decodeResponse(string $body): mixed
+    {
+        if ($body === '') {
+            return null;
+        }
+
+        $decoded = json_decode($body);
+
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $body;
+    }
+
+    private function isJson(string $body): bool
+    {
+        if ($body === '') {
+            return false;
+        }
+
+        json_decode($body);
+
+        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**

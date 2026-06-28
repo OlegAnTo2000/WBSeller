@@ -9,6 +9,8 @@ use Dakword\WBSeller\APIToken;
 use Dakword\WBSeller\Exception\ApiClientException;
 use Dakword\WBSeller\Exception\ApiTimeRestrictionsException;
 use Dakword\WBSeller\Exception\WBSellerException;
+use Dakword\WBSeller\Enum\ApiName;
+use Dakword\WBSeller\Enum\HttpMethod;
 use InvalidArgumentException;
 
 /**
@@ -26,8 +28,8 @@ use InvalidArgumentException;
  * Подводные камни:
  *   - Каждый экземпляр endpoint — это отдельный HTTP-клиент со своим state.
  *     Не переиспользуйте один экземпляр из разных потоков.
- *   - По умолчанию выполняется 3 попытки с задержкой 5 сек при 429/504.
- *     Переопределяется через retryOnTooManyRequests().
+ *   - По умолчанию retry выключен: выполняется только одна попытка.
+ *     Включается через retryOnTooManyRequests().
  *   - Ответы WB при 429 могут содержать "Технический перерыв до HH:MM" —
  *     в этом случае retry не выполняется, сразу бросается ApiTimeRestrictionsException.
  *   - Метод `middleware()` в дочернем классе (если определён) автоматически
@@ -47,7 +49,7 @@ abstract class AbstractEndpoint
     protected string $apiName = '';
 
     private string $locale = 'ru';
-    private int $attempts = 3;
+    private int $attempts = 1;
     private int $retryDelay = 5_000;
     private Client $Client;
     private ?string $proxyUrl = null;
@@ -58,6 +60,7 @@ abstract class AbstractEndpoint
      *
      * Валидация токена:
      *   - Если ключ не является JWT (нет трёх частей через точку) — пропускается.
+     *   - Если ключ похож на JWT, но не разбирается — бросает ApiClientException(401).
      *   - Если токен истёк — бросает ApiClientException(401) до первого запроса.
      *   - Если токен не имеет прав на $apiName — бросает ApiClientException(403).
      *
@@ -84,6 +87,7 @@ abstract class AbstractEndpoint
         bool    $verifySsl   = true
     ) {
         $this->validateToken($key);
+        $this->validateConfiguration($middlewares, $listeners);
 
         $this->locale   = $locale ?? 'ru';
         $this->proxyUrl = $proxy;
@@ -173,7 +177,8 @@ abstract class AbstractEndpoint
     /**
      * Переопределить параметры retry для этого экземпляра endpoint.
      *
-     * По умолчанию: 3 попытки с задержкой 5 000 мс (5 секунд).
+     * По умолчанию retry выключен. После вызова метода выполняется до 5 попыток
+     * с задержкой 5 000 мс (5 секунд), если параметры не переданы явно.
      * Retry срабатывает при ответах 429 (не "технический перерыв") и 504.
      *
      * @param int $attempts Максимальное суммарное число попыток (не дополнительных retry)
@@ -182,6 +187,13 @@ abstract class AbstractEndpoint
      */
     public function retryOnTooManyRequests(int $attempts = 5, int $delay = 5_000): self
     {
+        if ($attempts < 1) {
+            throw new InvalidArgumentException('Количество попыток должно быть не меньше 1');
+        }
+        if ($delay < 0) {
+            throw new InvalidArgumentException('Задержка retry не может быть отрицательной');
+        }
+
         $this->attempts   = $attempts;
         $this->retryDelay = $delay;
 
@@ -240,37 +252,37 @@ abstract class AbstractEndpoint
     /** Выполняет GET-запрос; параметры передаются в query string. */
     protected function getRequest(string $path, array $data = [], array $addonHeaders = [])
     {
-        return $this->request('GET', $path, $data, $addonHeaders);
+        return $this->request(HttpMethod::GET, $path, $data, $addonHeaders);
     }
 
     /** Выполняет POST-запрос; параметры сериализуются в JSON-тело. */
     protected function postRequest(string $path, array $data = [], array $addonHeaders = [])
     {
-        return $this->request('POST', $path, $data, $addonHeaders);
+        return $this->request(HttpMethod::POST, $path, $data, $addonHeaders);
     }
 
     /** Выполняет PUT-запрос; параметры сериализуются в JSON-тело. */
     protected function putRequest(string $path, array $data = [], array $addonHeaders = [])
     {
-        return $this->request('PUT', $path, $data, $addonHeaders);
+        return $this->request(HttpMethod::PUT, $path, $data, $addonHeaders);
     }
 
     /** Выполняет PATCH-запрос; параметры сериализуются в JSON-тело. */
     protected function patchRequest(string $path, array $data = [], array $addonHeaders = [])
     {
-        return $this->request('PATCH', $path, $data, $addonHeaders);
+        return $this->request(HttpMethod::PATCH, $path, $data, $addonHeaders);
     }
 
     /** Выполняет DELETE-запрос; параметры сериализуются в JSON-тело. */
     protected function deleteRequest(string $path, array $data = [], array $addonHeaders = [])
     {
-        return $this->request('DELETE', $path, $data, $addonHeaders);
+        return $this->request(HttpMethod::DELETE, $path, $data, $addonHeaders);
     }
 
     /** Выполняет POST-запрос с multipart/form-data (для загрузки файлов). */
     protected function multipartRequest(string $path, array $data = [], array $addonHeaders = [])
     {
-        return $this->request('MULTIPART', $path, $data, $addonHeaders);
+        return $this->request(HttpMethod::MULTIPART, $path, $data, $addonHeaders);
     }
 
     /**
@@ -283,10 +295,14 @@ abstract class AbstractEndpoint
      *   - 429 (другие) → retry до $this->attempts раз с паузой $this->retryDelay мс
      *   - 504 → retry до $this->attempts раз с паузой $this->retryDelay мс
      *
-     * По умолчанию: 3 попытки, 5 000 мс задержка.
+     * По умолчанию retry выключен: выполняется только одна попытка.
      */
-    private function request(string $method, string $path, array $data = [], array $addonHeaders = [])
-    {
+    private function request(
+        HttpMethod $method,
+        string $path,
+        array $data = [],
+        array $addonHeaders = []
+    ) {
         $attempt = 1;
 
         while (true) {
@@ -294,7 +310,9 @@ abstract class AbstractEndpoint
 
             if (
                 $this->responseCode() == 400
+                && is_object($result)
                 && property_exists($result, 'errorText')
+                && is_string($result->errorText)
                 && mb_strpos(mb_strtolower($result->errorText), 'временные ограничения') !== false
             ) {
                 throw new ApiTimeRestrictionsException($result->errorText);
@@ -326,9 +344,17 @@ abstract class AbstractEndpoint
                  * { errors: ["(api-new) too many requests"] }
                  * { code: 429, message: "" }
                  */
-                if (property_exists($result, 'errors')) {
+                if (is_object($result)
+                    && property_exists($result, 'errors')
+                    && is_array($result->errors)
+                    && isset($result->errors[0])
+                    && is_string($result->errors[0])
+                ) {
                     $message = $result->errors[0];
-                } elseif (property_exists($result, 'message')) {
+                } elseif (is_object($result)
+                    && property_exists($result, 'message')
+                    && is_string($result->message)
+                ) {
                     $message = $result->message;
                 } else {
                     $message = 'Too many requests';
@@ -367,13 +393,14 @@ abstract class AbstractEndpoint
      * Валидирует API-ключ если он имеет JWT-формат (три части через точку).
      *
      * Проверяет:
-     *   1. Срок действия токена — бросает ApiClientException(401) если истёк.
-     *   2. Права доступа к текущему endpoint ($apiName) — бросает ApiClientException(403).
+     *   1. Корректность JWT — бросает ApiClientException(401) при ошибке формата.
+     *   2. Срок действия токена — бросает ApiClientException(401) если истёк.
+     *   3. Права доступа к текущему endpoint ($apiName) — бросает ApiClientException(403).
      *
      * Нестандартные ключи (не JWT) пропускаются без ошибки — это нормальная ситуация
      * для тестовых или legacy-токенов WB.
      *
-     * @throws ApiClientException При истёкшем токене или отсутствии прав на endpoint
+     * @throws ApiClientException При некорректном/истёкшем токене или отсутствии прав
      */
     private function validateToken(string $key): void
     {
@@ -385,8 +412,7 @@ abstract class AbstractEndpoint
         try {
             $token = new APIToken($key);
         } catch (WBSellerException $e) {
-            // Похоже на JWT, но не парсится — пропускаем, ошибка вскроется при первом запросе
-            return;
+            throw new ApiClientException('Неверный формат API-токена', 401, $e);
         }
 
         if ($token->isExpired()) {
@@ -396,11 +422,36 @@ abstract class AbstractEndpoint
             );
         }
 
-        if ($this->apiName !== '' && !$token->accessTo($this->apiName)) {
+        $apiName = $this->apiName !== '' ? ApiName::tryFrom($this->apiName) : null;
+        if ($this->apiName !== '' && ($apiName === null || !$token->accessTo($apiName))) {
             throw new ApiClientException(
                 sprintf('Токен не имеет доступа к API "%s"', $this->apiName),
                 403
             );
+        }
+    }
+
+    private function validateConfiguration(array $middlewares, array $listeners): void
+    {
+        foreach ($middlewares as $middleware) {
+            if (!is_callable($middleware)) {
+                throw new InvalidArgumentException('Каждый middleware должен быть callable');
+            }
+        }
+
+        $allowedEvents = ['request', 'response', 'error'];
+        foreach ($listeners as $event => $callbacks) {
+            if (!is_string($event) || !in_array($event, $allowedEvents, true)) {
+                throw new InvalidArgumentException('Неизвестный тип listener: ' . (string) $event);
+            }
+            if (!is_array($callbacks)) {
+                throw new InvalidArgumentException(sprintf('Listeners "%s" должны быть массивом', $event));
+            }
+            foreach ($callbacks as $callback) {
+                if (!is_callable($callback)) {
+                    throw new InvalidArgumentException(sprintf('Каждый listener "%s" должен быть callable', $event));
+                }
+            }
         }
     }
 }
