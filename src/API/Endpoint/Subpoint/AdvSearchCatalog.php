@@ -147,4 +147,32 @@ class AdvSearchCatalog
     public function advertStatisticByKeywords(int $id, DateTime $dateFrom, DateTime $dateTo): ApiResponse {
         return $this->Adv->advertStatisticByKeywords($id, $dateFrom, $dateTo);
     }
+
+    /**
+     * Добавить / удалить товары в кампании Аукцион (тип 9)
+     *
+     * Максимум 5 запросов в секунду.
+     * @link https://dev.wildberries.ru/openapi/promotion#tag/Upravlenie-kampaniyami/paths/~1adv~1v0~1auction~1nms/patch
+     *
+     * @param int   $advertId  Идентификатор кампании
+     * @param int[] $add       nm_id для добавления
+     * @param int[] $delete    nm_id для удаления
+     *
+     * @return ApiResponse
+     *
+     * @throws InvalidArgumentException Оба массива пусты
+     */
+    public function updateAuctionNms(int $advertId, array $add = [], array $delete = []): ApiResponse
+    {
+        if (empty($add) && empty($delete)) {
+            throw new InvalidArgumentException('Необходимо передать хотя бы один nm_id для добавления или удаления.');
+        }
+        $nms = [];
+        if (!empty($add))    $nms['add']    = array_values($add);
+        if (!empty($delete)) $nms['delete'] = array_values($delete);
+
+        return $this->Adv->patchRequest('/adv/v0/auction/nms', [
+            'nms' => [['advert_id' => $advertId, 'nms' => $nms]],
+        ]);
+    }
 }
