@@ -10,28 +10,33 @@ Wildberries API / [**Аналитика**](https://openapi.wb.ru/analytics/api/r
 | :speech_balloon: | :cloud: | [Analytics()](/src/API/Endpoint/Analytics.php) |
 | ---------------- | ------- | ---------------------------------------------- |
 | Проверка подключения к API | /ping | Analytics()->**ping()** |
-| [**Воронка продаж**](https://openapi.wb.ru/analytics/api/ru/#tag/Voronka-prodazh) |||
-| Получение статистики КТ за выбранный период,<br>по nmID/предметам/брендам/тегам             | /api/v2/nm-report/detail          | Analytics()->**nmReportDetail()**         |
-| Получение статистики КТ за период,<br>сгруппированный по предметам, брендам и тегам         | /api/v2/nm-report/grouped         | Analytics()->**nmReportGrouped()**        |
-| Получение статистики КТ по дням<br>по выбранным nmID                                        | /api/v2/nm-report/detail/history  | Analytics()->**nmReportDetailHistory()**  |
-| Получение статистики КТ по дням за период,<br>сгруппированный по предметам, брендам и тегам | /api/v2/nm-report/grouped/history | Analytics()->**nmReportGroupedHistory()** |
-| [**Товары с обязательной маркировкой**](https://openapi.wb.ru/analytics/api/ru/#tag/Tovary-s-obyazatelnoj-markirovkoj) |||
-| Отчёт по товарам с обязательной маркировкой | /api/v1/analytics/excise-report | Analytics()->**exciseReport()** |
-| [**Платная приемка**](https://openapi.wb.ru/analytics/api/ru/#tag/Platnaya-priyomka) |||
-| Отчет о платной приемке | /api/v1/analytics/acceptance-report | Analytics()->**acceptanceReport()** |
-| [**Отчеты по удержаниям**](https://openapi.wb.ru/analytics/api/ru/#tag/Otchyoty-po-uderzhaniyam) |||
-| Самовыкупы                          | /api/v1/analytics/antifraud-details      | Analytics()->**antifraudDetails()**      |
-| Подмена товара                      | /api/v1/analytics/incorrect-attachments  | Analytics()->**incorrectAttachments()**  |
-| Коэффициент логистики<br>и хранения | /api/v1/analytics/storage-coefficient    | Analytics()->**storageCoefficient()**    |
-| Маркировка товара                   | /api/v1/analytics/goods-labeling         | Analytics()->**goodsLabeling()**         |
-| Смена характеристик                 | /api/v1/analytics/characteristics-change | Analytics()->**characteristicsChange()** |
-| [**Продажи по регионам**](https://openapi.wb.ru/analytics/api/ru/#tag/Prodazhi-po-regionam) |||
-| Отчет о продажах сгруппированный<br>по регионам стран | /api/v1/analytics/region-sale | Analytics()->**regionSale()** |
-| [**Отчёт по возвратам товаров**](https://openapi.wb.ru/analytics/api/ru/#tag/Otchyot-po-vozvratam-tovarov) |||
-| Получить отчет | /api/v1/analytics/goods-return | Analytics()->**goodsReturn()** |
-| **Динамика оборачиваемости** |||
-| Ежедневная динамика | /api/v1/turnover-dynamics/daily-dynamics | Analytics()->**dailyDynamics()** |
+| **Воронка продаж v3** |||
+| Статистика карточек товаров | /api/analytics/v3/sales-funnel/products | Analytics()->**v3SalesFunnelProducts()** |
+| История по артикулам WB | /api/analytics/v3/sales-funnel/products/history | Analytics()->**v3SalesFunnelProductsHistory()** |
+| История по группам | /api/analytics/v3/sales-funnel/grouped/history | Analytics()->**v3SalesFunnelGroupedHistory()** |
+| **CSV-отчёты** |||
+| Создать отчёт | POST /api/v2/nm-report/downloads | Analytics()->**createAnalyticsReport()** |
+| Получить список отчётов | GET /api/v2/nm-report/downloads | Analytics()->**getAnalyticsReports()** |
+| Повторить генерацию | /api/v2/nm-report/downloads/retry | Analytics()->**retryAnalyticsReport()** |
+| Скачать файл | /api/v2/nm-report/downloads/file/{downloadId} | Analytics()->**downloadAnalyticsReportFile()** |
+| **Поисковые запросы** |||
+| Главная страница | /api/v2/search-report/report | Analytics()->**searchReport()** |
+| Группы | /api/v2/search-report/table/groups | Analytics()->**searchReportGroups()** |
+| Товары в группе | /api/v2/search-report/table/details | Analytics()->**searchReportDetails()** |
+| Тексты поисковых запросов | /api/v2/search-report/product/search-texts | Analytics()->**searchReportProductSearchTexts()** |
+| Заказы по поисковым запросам | /api/v2/search-report/product/orders | Analytics()->**searchReportProductOrders()** |
+| **История остатков** |||
+| Склады WB | /api/analytics/v1/stocks-report/wb-warehouses | Analytics()->**stocksReportWbWarehouses()** |
+| Группы товаров | /api/v2/stocks-report/products/groups | Analytics()->**stocksReportProductGroups()** |
+| Товары | /api/v2/stocks-report/products/products | Analytics()->**stocksReportProducts()** |
+| Размеры | /api/v2/stocks-report/products/sizes | Analytics()->**stocksReportProductSizes()** |
+| Склады | /api/v2/stocks-report/offices | Analytics()->**stocksReportOffices()** |
+| **Рейтинг карточки товара** |||
+| Актуальный метод | /api/analytics/v2/item-rating | Analytics()->**itemRating()** |
+| Устаревший метод | /api/analytics/v1/item-rating | Analytics()->**itemRatingV1()** |
 <br>
+
+Методы, которых нет в `11-analytics.yaml`, сохранены для обратной совместимости и помечены `@deprecated`.
 
 ## [WBSeller API](/docs/API.md) / Analytics()->PaidStorage()
 

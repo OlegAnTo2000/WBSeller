@@ -40,6 +40,14 @@ class Feedbacks extends AbstractEndpoint
     }
 
     /**
+     * Рейтинг продавца и количество отзывов.
+     */
+    public function sellerRating(): ApiResponse
+    {
+        return $this->getRequest('/api/common/v1/rating');
+    }
+
+    /**
      * Количество отзывов
      *
      * @param bool          $isAnswered Обработанные отзывы (true) или необработанные отзывы (false)

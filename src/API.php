@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller;
 
-use Dakword\WBSeller\API\Endpoint\{ Adv, Analytics, Calendar, Chat, Common, Content, Documents, Feedbacks, Marketplace, Prices, Questions, Recommends, Returns, Statistics, Supplies, Tariffs };
+use Dakword\WBSeller\API\Endpoint\{ Adv, Analytics, Calendar, Chat, Common, Content, Documents, Feedbacks, Marketplace, Prices, Questions, Recommends, Returns, Statistics, Supplies, Tariffs, Users };
 use Dakword\WBSeller\API\Endpoint\Test;
 
 /**
@@ -45,6 +45,7 @@ class API
         'statistics'  => 'https://statistics-api.wildberries.ru',
         'supplies'    => 'https://supplies-api.wildberries.ru',
         'tariffs'     => 'https://common-api.wildberries.ru',
+        'users'       => 'https://user-management-api.wildberries.ru',
     ];
     private array $apiKeys;
     private string $masterKey;
@@ -80,6 +81,7 @@ class API
      *     'recommends' => '',
      *     'statistics' => '',
      *     'tariffs' => '',
+     *     'users' => '',
      *   ],
      *   'masterkey' => 'alternative_universal_key',
      *   'apiurls' => [
@@ -93,6 +95,7 @@ class API
      *     'recommends' => '',
      *     'statistics' => '',
      *     'tariffs' => '',
+     *     'users' => '',
      *   ],
      *   'locale' => 'ru',
      *   'middlewares' => [
@@ -635,6 +638,22 @@ class API
         return new Tariffs(
             $this->apiUrls['tariffs'],
             $this->getKey('tariffs'),
+            $this->proxy,
+            $this->locale,
+            $this->middlewares,
+            $this->listeners,
+            $this->verifySsl
+        );
+    }
+
+    /**
+     * Создаёт клиент API управления пользователями продавца.
+     */
+    public function Users(): Users
+    {
+        return new Users(
+            $this->apiUrls['users'],
+            $this->getKey('users'),
             $this->proxy,
             $this->locale,
             $this->middlewares,

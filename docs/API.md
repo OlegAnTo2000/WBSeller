@@ -83,3 +83,4 @@ X-Ratelimit-Limit: 10
 | Документы                | $wbSellerAPI->[**Documents()**](Documents.md)     | documents       | https://documents-api.wildberries.ru
 | Календарь акций          | $wbSellerAPI->[**Calendar()**](Calendar.md)       | prices/calendar | https://dp-calendar-api.wildberries.ru
 | Поставки                 | $wbSellerAPI->[**Supplies()**](Supplies.md)       | supplies        | https://supplies-api.wildberries.ru
+| Управление пользователями | $wbSellerAPI->[**Users()**](Users.md)             | users           | https://user-management-api.wildberries.ru

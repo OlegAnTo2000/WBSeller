@@ -7,6 +7,8 @@ namespace Dakword\WBSeller\API\Endpoint\Subpoint;
 use Dakword\WBSeller\API\Response\ApiResponse;
 
 use Dakword\WBSeller\API\Endpoint\Common;
+use DateTimeInterface;
+use InvalidArgumentException;
 
 class News
 {
@@ -15,6 +17,30 @@ class News
     public function __construct(Common $Common)
     {
         $this->Common = $Common;
+    }
+
+    /**
+     * Новости портала продавцов по дате публикации или ID новости.
+     *
+     * Необходимо передать хотя бы один из параметров.
+     *
+     * @param DateTimeInterface|null $from   Дата, начиная с которой нужно получить новости
+     * @param int|null               $fromId ID новости, начиная с которой — включая её — нужно получить новости
+     */
+    public function list(?DateTimeInterface $from = null, ?int $fromId = null): ApiResponse
+    {
+        if ($from === null && $fromId === null) {
+            throw new InvalidArgumentException('Необходимо указать дату или ID новости');
+        }
+        if ($fromId !== null && $fromId < 0) {
+            throw new InvalidArgumentException('ID новости не может быть отрицательным');
+        }
+
+        return $this->Common->getRequest(
+            '/api/communications/v2/news',
+            ($from !== null ? ['from' => $from->format('Y-m-d')] : [])
+            + ($fromId !== null ? ['fromID' => $fromId] : [])
+        );
     }
 
     /**
@@ -27,6 +53,7 @@ class News
      * @param \DateTime $date Дата, от которой необходимо выдать новости
      *
      * @return ApiResponse
+     * @deprecated Используйте list(), работающий с актуальным маршрутом v2.
      */
     public function fromDate(\DateTime $date): ApiResponse {
         return $this->Common->getRequest('/api/communications/v1/news', [
@@ -45,6 +72,7 @@ class News
      * @param int $id ID новости, от которой необходимо выдать новости
      *
      * @return ApiResponse
+     * @deprecated Используйте list(), работающий с актуальным маршрутом v2.
      */
     public function fromId(int $id): ApiResponse {
         return $this->Common->getRequest('/api/communications/v1/news', [

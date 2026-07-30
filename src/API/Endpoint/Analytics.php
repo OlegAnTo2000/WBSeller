@@ -16,11 +16,49 @@ use InvalidArgumentException;
 
 class Analytics extends AbstractEndpoint
 {
+    private const SALES_FUNNEL_ORDER_FIELDS = [
+        'openCard',
+        'addToCart',
+        'orderCount',
+        'orderSum',
+        'buyoutCount',
+        'buyoutSum',
+        'cancelCount',
+        'cancelSum',
+        'avgPrice',
+        'stockMpQty',
+        'stockWbQty',
+        'shareOrderPercent',
+        'addToWishlist',
+        'timeToReady',
+        'localizationPercent',
+        'wbClub.orderCount',
+        'wbClub.orderSum',
+        'wbClub.buyoutSum',
+        'wbClub.cancelSum',
+        'wbClub.buyoutCount',
+        'wbClub.avgPrice',
+        'wbClub.buyoutPercent',
+        'wbClub.avgOrderCountPerDay',
+        'wbClub.cancelCount',
+    ];
+
+    private const CSV_REPORT_TYPES = [
+        'DETAIL_HISTORY_REPORT',
+        'GROUPED_HISTORY_REPORT',
+        'SEARCH_QUERIES_PREMIUM_REPORT_GROUP',
+        'SEARCH_QUERIES_PREMIUM_REPORT_PRODUCT',
+        'SEARCH_QUERIES_PREMIUM_REPORT_TEXT',
+        'STOCK_HISTORY_REPORT_CSV',
+        'STOCK_HISTORY_DAILY_CSV',
+    ];
+
     protected string $apiName = 'analytics';
 
     /**
      * Скрытые товары
      *
+     * @deprecated Методы раздела отсутствуют в актуальной схеме Analytics.
      * @return BannedProducts
      */
     public function BannedProducts(): BannedProducts
@@ -30,6 +68,7 @@ class Analytics extends AbstractEndpoint
     /**
      * Доля бренда в продажах
      *
+     * @deprecated Методы раздела отсутствуют в актуальной схеме Analytics.
      * @return Brands
      */
     public function Brands(): Brands
@@ -40,6 +79,7 @@ class Analytics extends AbstractEndpoint
     /**
      * Платное хранение
      *
+     * @deprecated Методы раздела отсутствуют в актуальной схеме Analytics.
      * @return PaidStorage
      */
     public function PaidStorage(): PaidStorage
@@ -51,6 +91,7 @@ class Analytics extends AbstractEndpoint
      * Отчёт по остаткам на складах
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyot-po-ostatkam-na-skladah
      *
+     * @deprecated Методы раздела отсутствуют в актуальной схеме Analytics.
      * @return WarehouseRemains
      */
     public function WarehouseRemains(): WarehouseRemains
@@ -103,6 +144,7 @@ class Analytics extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Неизвестный вид сортировки
      * @throws InvalidArgumentException Неизвестный порядок сортировки
+     * @deprecated Используйте v3SalesFunnelProducts().
      */
     public function nmReportDetail(DateTime $dateFrom, DateTime $dateTo, array $filter = [], int $page = 1, string $timezone='Europe/Moscow', string $orderBy = 'openCard', string $direction = 'desc'): ApiResponse {
         if (!in_array($orderBy, ["openCard", "addToCart", "orders", "avgRubPrice", "ordersSumRub", "stockMpQty", "stockWbQty", "cancelSumRub", "cancelCount", "buyoutCount", "buyoutSumRub"])) {
@@ -167,6 +209,7 @@ class Analytics extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Неизвестный вид сортировки
      * @throws InvalidArgumentException Неизвестный порядок сортировки
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      */
     public function nmReportGrouped(DateTime $dateFrom, DateTime $dateTo, array $filter = [], int $page = 1, string $timezone = 'Europe/Moscow', string $orderBy = 'openCard', string $direction = 'desc'): ApiResponse {
         if (!in_array($orderBy, ["openCard", "addToCart", "orders", "avgRubPrice", "ordersSumRub", "stockMpQty", "stockWbQty"])) {
@@ -212,6 +255,7 @@ class Analytics extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального количества переданных артикулов
      * @throws InvalidArgumentException Неизвестный тип агрегации
+     * @deprecated Используйте v3SalesFunnelProductsHistory().
      */
     public function nmReportDetailHistory(array $nmIDs, DateTime $dateFrom, DateTime $dateTo, string $agregation = 'day', string $timezone = 'Europe/Moscow'): ApiResponse {
         $maxCount = 20;
@@ -237,14 +281,16 @@ class Analytics extends AbstractEndpoint
      * 
      * Можно получить отчёт максимум за последние 365 дней.
      * 3 запроса в минуту.
+     * Клиентский limit по умолчанию оставлен 1000 для обратной совместимости;
+     * серверное значение по умолчанию в Swagger — 50, максимум — 1000.
      * 
      * @link https://dev.wildberries.ru/openapi/analytics/#tag/Voronka-prodazh/operation/postSalesFunnelProducts
      */
     public function v3SalesFunnelProducts(
         DateTime $selectedPeriodFrom,
         DateTime $selectedPeriodTo,
-        DateTime $pastPeriodFrom,
-        DateTime $pastPeriodTo,
+        ?DateTime $pastPeriodFrom = null,
+        ?DateTime $pastPeriodTo = null,
         array $nmIds = [],
         array $brandNames = [],
         array $subjectIds = [],
@@ -255,14 +301,19 @@ class Analytics extends AbstractEndpoint
         int $limit = 1000,
         int $offset = 0
     ): ApiResponse {
-        return $this->postRequest('/api/analytics/v3/sales-funnel/products', [
+        if (($pastPeriodFrom === null) !== ($pastPeriodTo === null)) {
+            throw new InvalidArgumentException('Для сравнения нужно передать обе границы прошлого периода');
+        }
+        if (count($nmIds) > 1000) {
+            throw new InvalidArgumentException('Превышено максимальное количество артикулов WB: 1000');
+        }
+        $this->validateOrderBy($orderByField, $orderByMode, self::SALES_FUNNEL_ORDER_FIELDS);
+        $this->validatePagination($limit, $offset);
+
+        $params = [
             'selectedPeriod' => [
                 'start' => $selectedPeriodFrom->format('Y-m-d'),
                 'end' => $selectedPeriodTo->format('Y-m-d'),
-            ],
-            'pastPeriod' => [
-                'start' => $pastPeriodFrom->format('Y-m-d'),
-                'end' => $pastPeriodTo->format('Y-m-d'),
             ],
             'nmIds'      => $nmIds,
             'subjectIds' => $subjectIds,
@@ -275,7 +326,224 @@ class Analytics extends AbstractEndpoint
             ],
             'limit' => $limit,
             'offset' => $offset,
+        ];
+
+        if ($pastPeriodFrom !== null && $pastPeriodTo !== null) {
+            $params['pastPeriod'] = [
+                'start' => $pastPeriodFrom->format('Y-m-d'),
+                'end' => $pastPeriodTo->format('Y-m-d'),
+            ];
+        }
+
+        return $this->postRequest('/api/analytics/v3/sales-funnel/products', $params);
+    }
+
+    /**
+     * История статистики карточек товаров.
+     *
+     * @param array<int, int> $nmIds Артикулы WB, от 1 до 20.
+     */
+    public function v3SalesFunnelProductsHistory(
+        DateTime $selectedPeriodFrom,
+        DateTime $selectedPeriodTo,
+        array $nmIds,
+        bool $skipDeletedNm = false,
+        string $aggregationLevel = 'day'
+    ): ApiResponse {
+        if ($nmIds === [] || count($nmIds) > 20) {
+            throw new InvalidArgumentException('Количество артикулов WB должно быть от 1 до 20');
+        }
+        $this->validateAggregationLevel($aggregationLevel);
+
+        return $this->postRequest('/api/analytics/v3/sales-funnel/products/history', [
+            'selectedPeriod' => [
+                'start' => $selectedPeriodFrom->format('Y-m-d'),
+                'end' => $selectedPeriodTo->format('Y-m-d'),
+            ],
+            'nmIds' => $nmIds,
+            'skipDeletedNm' => $skipDeletedNm,
+            'aggregationLevel' => $aggregationLevel,
         ]);
+    }
+
+    /**
+     * История воронки продаж с группировкой по предметам, брендам и ярлыкам.
+     */
+    public function v3SalesFunnelGroupedHistory(
+        DateTime $selectedPeriodFrom,
+        DateTime $selectedPeriodTo,
+        array $brandNames = [],
+        array $subjectIds = [],
+        array $tagIds = [],
+        bool $skipDeletedNm = false,
+        string $aggregationLevel = 'day'
+    ): ApiResponse {
+        $this->validateAggregationLevel($aggregationLevel);
+
+        return $this->postRequest('/api/analytics/v3/sales-funnel/grouped/history', [
+            'selectedPeriod' => [
+                'start' => $selectedPeriodFrom->format('Y-m-d'),
+                'end' => $selectedPeriodTo->format('Y-m-d'),
+            ],
+            'brandNames' => $brandNames,
+            'subjectIds' => $subjectIds,
+            'tagIds' => $tagIds,
+            'skipDeletedNm' => $skipDeletedNm,
+            'aggregationLevel' => $aggregationLevel,
+        ]);
+    }
+
+    /**
+     * Создать CSV-отчёт с расширенной аналитикой.
+     *
+     * Состав `$params` зависит от `$reportType` и описан в 11-analytics.yaml.
+     */
+    public function createAnalyticsReport(
+        string $id,
+        string $reportType,
+        array $params,
+        ?string $userReportName = null
+    ): ApiResponse {
+        if (!in_array($reportType, self::CSV_REPORT_TYPES, true)) {
+            throw new InvalidArgumentException('Неизвестный тип CSV-отчёта: ' . $reportType);
+        }
+
+        $body = [
+            'id' => $id,
+            'reportType' => $reportType,
+            'params' => $params,
+        ];
+        if ($userReportName !== null) {
+            $body['userReportName'] = $userReportName;
+        }
+
+        return $this->postRequest('/api/v2/nm-report/downloads', $body);
+    }
+
+    /** @param array<int, string> $downloadIds */
+    public function getAnalyticsReports(array $downloadIds = []): ApiResponse
+    {
+        $query = $downloadIds === [] ? [] : ['filter[downloadIds]' => $downloadIds];
+
+        return $this->getRequest('/api/v2/nm-report/downloads', $query);
+    }
+
+    public function retryAnalyticsReport(string $downloadId): ApiResponse
+    {
+        return $this->postRequest('/api/v2/nm-report/downloads/retry', ['downloadId' => $downloadId]);
+    }
+
+    public function downloadAnalyticsReportFile(string $downloadId): ApiResponse
+    {
+        return $this->getRequest('/api/v2/nm-report/downloads/file/' . rawurlencode($downloadId));
+    }
+
+    /**
+     * Главная страница отчёта по поисковым запросам.
+     *
+     * Обязательные поля: currentPeriod, orderBy, positionCluster, limit, offset.
+     * Опциональные: pastPeriod, nmIds, subjectIds, brandNames, tagIds,
+     * includeSubstitutedSKUs, includeSearchTexts.
+     */
+    public function searchReport(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/search-report/report', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, orderBy, positionCluster, limit, offset.
+     * Опциональные: pastPeriod, nmIds, subjectIds, brandNames, tagIds,
+     * includeSubstitutedSKUs, includeSearchTexts.
+     */
+    public function searchReportGroups(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/search-report/table/groups', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, orderBy, positionCluster, limit, offset.
+     * Опциональные: pastPeriod, subjectId, brandName, tagId, nmIds,
+     * includeSubstitutedSKUs, includeSearchTexts.
+     */
+    public function searchReportDetails(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/search-report/table/details', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, nmIds, limit, topOrderBy, orderBy.
+     * Опциональные: pastPeriod, includeSubstitutedSKUs, includeSearchTexts.
+     */
+    public function searchReportProductSearchTexts(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/search-report/product/search-texts', $params);
+    }
+
+    /** Обязательные поля: period, nmId, searchTexts. */
+    public function searchReportProductOrders(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/search-report/product/orders', $params);
+    }
+
+    /** Опциональные поля: nmIds, chrtIds, limit, offset. */
+    public function stocksReportWbWarehouses(array $params = []): ApiResponse
+    {
+        return $this->postRequest('/api/analytics/v1/stocks-report/wb-warehouses', $params);
+    }
+
+    /**
+     * Обязательные поля: availabilityFilters, currentPeriod, stockType, skipDeletedNm, orderBy, offset.
+     * Опциональные: nmIDs, subjectIDs, brandNames, tagIDs, limit.
+     */
+    public function stocksReportProductGroups(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/stocks-report/products/groups', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, stockType, skipDeletedNm, orderBy, availabilityFilters, offset.
+     * Опциональные: nmIDs, subjectID, brandName, tagID, limit.
+     */
+    public function stocksReportProducts(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/stocks-report/products/products', $params);
+    }
+
+    /** Обязательные поля: nmID, currentPeriod, stockType, orderBy, includeOffice. */
+    public function stocksReportProductSizes(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/stocks-report/products/sizes', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, stockType, skipDeletedNm.
+     * Опциональные: nmIDs, subjectIDs, brandNames, tagIDs.
+     */
+    public function stocksReportOffices(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/v2/stocks-report/offices', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, orderBy, offset.
+     * Опциональные: pastPeriod, nmIds, subjectIds, brandNames, tagIds,
+     * isNotIncludeNmsWithoutSales, onlyShadowedNms, limit.
+     */
+    public function itemRating(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/analytics/v2/item-rating', $params);
+    }
+
+    /**
+     * Обязательные поля: currentPeriod, orderBy, offset.
+     * Опциональные: pastPeriod, nmIds, subjectIds, brandNames, tagIds,
+     * isNotIncludeNMsWithoutSales, limit.
+     *
+     * @deprecated Используйте itemRating().
+     */
+    public function itemRatingV1(array $params): ApiResponse
+    {
+        return $this->postRequest('/api/analytics/v1/item-rating', $params);
     }
 
     /**
@@ -306,6 +574,7 @@ class Analytics extends AbstractEndpoint
      *
      * @throws InvalidArgumentException Превышение максимального произведения количества предметов, брендов, тегов
      * @throws InvalidArgumentException Неизвестный тип агрегации
+     * @deprecated Используйте v3SalesFunnelGroupedHistory().
      */
     public function nmReportGroupedHistory(DateTime $dateFrom, DateTime $dateTo, array $filter = [], string $agregation = 'day', string $timezone = 'Europe/Moscow'): ApiResponse {
         $max = 16;
@@ -344,6 +613,7 @@ class Analytics extends AbstractEndpoint
      * Возвращает операции по маркируемым товарам.
      * Максимум 10 запросов за 5 часов.
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Tovary-s-obyazatelnoj-markirovkoj/paths/~1api~1v1~1analytics~1excise-report/post
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom  Дата начала отчётного периода
      * @param DateTime $dateTo    Дата окончания отчётного периода
@@ -371,6 +641,7 @@ class Analytics extends AbstractEndpoint
      * Возвращает даты и стоимость приёмки. Можно получить отчёт максимум за 31 день.
      * Максимум 1 запрос в минуту
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Platnaya-priyomka/paths/~1api~1v1~1analytics~1acceptance-report/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
@@ -397,6 +668,7 @@ class Analytics extends AbstractEndpoint
      * Также можно получить отчёт за всё время с августа 2023, для этого не передавайте параметр $date.
      * Максимум 10 запросов за 100 минут.
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyoty-po-uderzhaniyam/paths/~1api~1v1~1analytics~1antifraud-details/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime|null $date Дата, которая входит в отчётный период
      *
@@ -414,6 +686,7 @@ class Analytics extends AbstractEndpoint
      * Можно получить отчёт максимум за 31 день, доступны данные с июня 2023.
      * Максимум 1 запрос в минуту.
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyoty-po-uderzhaniyam/paths/~1api~1v1~1analytics~1incorrect-attachments/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
@@ -435,6 +708,7 @@ class Analytics extends AbstractEndpoint
      * Можно получить данные с 31.10.2022.
      * Максимум 1 запрос в минуту.
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyoty-po-uderzhaniyam/paths/~1api~1v1~1analytics~1storage-coefficient/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime|null $date Дата, которая входит в отчётный период
      *
@@ -452,6 +726,7 @@ class Analytics extends AbstractEndpoint
      * Можно получить данные максимум за 31 день, начиная с марта 2024.
      * Максимум 10 запросов за 10 минут
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyoty-po-uderzhaniyam/paths/~1api~1v1~1analytics~1goods-labeling/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
@@ -474,6 +749,7 @@ class Analytics extends AbstractEndpoint
      * Можно получить отчёт максимум за 31 день, доступны данные с 28 декабря 2021.
      * Максимум 10 запросов за 10 минут
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyoty-po-uderzhaniyam/paths/~1api~1v1~1analytics~1characteristics-change/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
@@ -500,6 +776,7 @@ class Analytics extends AbstractEndpoint
      * Можно получить отчёт максимум за 31 день.
      * Максимум 1 запрос в 10 секунд
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Prodazhi-po-regionam/paths/~1api~1v1~1analytics~1region-sale/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
@@ -511,6 +788,36 @@ class Analytics extends AbstractEndpoint
             'dateFrom' => $dateFrom->format('Y-m-d'),
             'dateTo' => $dateTo->format('Y-m-d'),
         ]);
+    }
+
+    /**
+     * @param array<int, string> $allowedFields
+     */
+    private function validateOrderBy(string $field, string $mode, array $allowedFields): void
+    {
+        if (!in_array($field, $allowedFields, true)) {
+            throw new InvalidArgumentException('Неизвестное поле сортировки: ' . $field);
+        }
+        if (!in_array($mode, ['asc', 'desc'], true)) {
+            throw new InvalidArgumentException('Неизвестный порядок сортировки: ' . $mode);
+        }
+    }
+
+    private function validatePagination(int $limit, int $offset): void
+    {
+        if ($limit < 0 || $limit > 1000) {
+            throw new InvalidArgumentException('Значение limit должно быть от 0 до 1000');
+        }
+        if ($offset < 0) {
+            throw new InvalidArgumentException('Значение offset не может быть отрицательным');
+        }
+    }
+
+    private function validateAggregationLevel(string $aggregationLevel): void
+    {
+        if (!in_array($aggregationLevel, ['day', 'week'], true)) {
+            throw new InvalidArgumentException('Неизвестный тип агрегации: ' . $aggregationLevel);
+        }
     }
 
     private function getFromFilter(string $param, array $filter)
@@ -533,6 +840,7 @@ class Analytics extends AbstractEndpoint
      * Одним запросом можно получить отчёт максимум за 31 день.
      * Максимум 1 запрос в минуту
      * @link https://openapi.wb.ru/analytics/api/ru/#tag/Otchyot-po-vozvratam-tovarov/paths/~1api~1v1~1analytics~1goods-return/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Начало отчётного периода
      * @param DateTime $dateTo   Конец отчётного периода
@@ -558,6 +866,7 @@ class Analytics extends AbstractEndpoint
      * Можно получить отчёт максимум за 31 день.
      * Максимум 1 запрос в 10 секунд.
      * @link https://dev.wildberries.ru/ru/openapi/reports/#tag/Dinamika-oborachivaemosti/paths/~1api~1v1~1turnover-dynamics~1daily-dynamics/get
+     * @deprecated Отсутствует в актуальной схеме Analytics.
      *
      * @param DateTime $dateFrom Дата начала отчётного периода
      * @param DateTime $dateTo   Дата окончания отчётного периода

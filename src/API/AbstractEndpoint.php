@@ -147,9 +147,9 @@ abstract class AbstractEndpoint
      *
      * @link https://openapi.wildberries.ru/general/ping/ru/#/paths/~1ping/get
      *
-     * @return object {TS: string, status: "OK"}
+     * @return ApiResponse Ответ WB с полями TS и Status
      */
-    public function ping(): object
+    public function ping(): ApiResponse
     {
         return $this->getRequest('/ping');
     }
