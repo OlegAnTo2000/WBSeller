@@ -17,3 +17,7 @@ Wildberries API / [**Статистика**](https://openapi.wb.ru/statistics/ap
 | Продажи и возвраты             | /api/v1/supplier/sales                | Statistics()->**salesFromDate()**  |
 | Продажи и возвраты за дату     | /api/v1/supplier/sales                | Statistics()->**salesOnDate()**    |
 | Отчет о продажах по реализации | /api/v5/supplier/reportDetailByPeriod | Statistics()->**detailReport()**   |
+
+```php
+$Statistics->detailReport($dateFrom, $dateTo, 100000, 0, 'daily'); // daily или weekly
+```

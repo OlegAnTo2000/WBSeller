@@ -135,21 +135,32 @@ class Statistics extends AbstractEndpoint
      *                           значение rrd_id из последней строки, полученной в результате предыдущего вызова.
      *                           Для загрузки одного отчета может понадобиться вызывать API до тех пор,
      *                           пока количество возвращаемых строк не станет равным нулю.
+     * @param string   $period   Периодичность отчетов: daily или weekly
      *
      * @return ApiResponse
      *
      * @throws InvalidArgumentException
      */
-    public function detailReport(DateTime $dateFrom, DateTime $dateTo, int $limit, int $rrdId = 0): ApiResponse {
+    public function detailReport(
+        DateTime $dateFrom,
+        DateTime $dateTo,
+        int $limit,
+        int $rrdId = 0,
+        string $period = 'weekly'
+    ): ApiResponse {
         $maxLimit = 100_000;
         if ($limit > $maxLimit) {
             throw new InvalidArgumentException("Превышение максимального количества запрашиваемых строк отчета: {$maxLimit}");
+        }
+        if (!in_array($period, ['daily', 'weekly'], true)) {
+            throw new InvalidArgumentException('Периодичность отчета должна быть daily или weekly');
         }
         return ($this->getRequest('/api/v5/supplier/reportDetailByPeriod', [
             'dateFrom' => $dateFrom->format(DATE_RFC3339),
             'dateTo' => $dateTo->format(DATE_RFC3339),
             'limit' => $limit,
             'rrdid' => $rrdId,
+            'period' => $period,
         ]) ?? []);
     }
 
