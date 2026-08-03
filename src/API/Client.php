@@ -35,7 +35,7 @@ use Throwable;
  * содержащий тот же ApiResponse. Сетевые и middleware-ошибки преобразуются в
  * ApiTransportException. Исходное исключение доступно через getPrevious().
  *
- * Таймаут: 60 сек. на ответ, 15 сек. на соединение. SSL-верификация настраивается
+ * Таймаут: 300 сек. на ответ, 15 сек. на соединение. SSL-верификация настраивается
  * через конструктор и по умолчанию включена.
  * Сам Client не выполняет retry: эта логика находится в AbstractEndpoint и
  * по умолчанию выключена.
@@ -75,7 +75,7 @@ class Client
         $this->stack = $stack ?? new HandlerStack(new CurlHandler());
 
         $this->Client = new HttpClient([
-            'timeout'         => 60,
+            'timeout'         => 300,
             'connect_timeout' => 15,
             'verify'          => $verifySsl,
             'handler'         => $this->stack,

@@ -53,6 +53,17 @@ class ClientTest extends TestCase
         self::assertSame(200, $response->statusCode);
     }
 
+    public function testHttpClientHasDefaultTimeouts(): void
+    {
+        $client = new Client('https://example.test', 'fake-key');
+        $property = new \ReflectionProperty($client, 'Client');
+        $property->setAccessible(true);
+        $httpClient = $property->getValue($client);
+
+        self::assertSame(300, $httpClient->getConfig('timeout'));
+        self::assertSame(15, $httpClient->getConfig('connect_timeout'));
+    }
+
     public static function errorResponses(): array
     {
         $cases = [];
