@@ -8,6 +8,8 @@ use Dakword\WBSeller\API\Response\ApiResponse;
 
 use Dakword\WBSeller\API\AbstractEndpoint;
 
+use GuzzleHttp\Psr7\Utils;
+
 class Chat extends AbstractEndpoint
 {
     protected string $apiName = 'chat';
@@ -64,8 +66,9 @@ class Chat extends AbstractEndpoint
      * @param string $message   Текст сообщения. Максимум 1000 символов. Лишнее отрежем!
      * @param array  $images    Файлы, формат JPEG, PDF или PNG, максимальный размер - 5 Мб каждый.
      *                          Максимальный суммарный размер файлов - 30 Мб.
+     *                          Элемент массива - путь к файлу (строка) или ресурс/поток с содержимым файла.
      * @see https://openapi.wb.ru/buyers-chat/api/ru/#/paths/~1api~1v1~1seller~1message/post
-     * 
+     *
      * @return ApiResponse
      *     result: {
      *         addTime: int,
@@ -75,11 +78,27 @@ class Chat extends AbstractEndpoint
      * }
      */
     public function message(string $replySign, string $message, array $images): ApiResponse {
-        return $this->multipartRequest('/api/v1/seller/message', [
-            'replySign' => $replySign,
-            'message' => mb_substr($message, 0, 1000),
-            'file' => $images,
-        ]);
+        // Guzzle ждёт multipart-массив из элементов ['name' => ..., 'contents' => ...]:
+        // ассоциативный массив со скалярными значениями приводит к
+        // UnexpectedValueException в MultipartStream ещё до отправки запроса
+        $parts = [
+            [
+                'name'     => 'replySign',
+                'contents' => $replySign,
+            ],
+            [
+                'name'     => 'message',
+                'contents' => mb_substr($message, 0, 1000),
+            ],
+        ];
+        foreach ($images as $image) {
+            $parts[] = [
+                'name'     => 'file',
+                'contents' => is_string($image) ? Utils::tryFopen($image, 'rb') : $image,
+                'filename' => is_string($image) ? basename($image) : null,
+            ];
+        }
+        return $this->multipartRequest('/api/v1/seller/message', $parts);
     }
     
 }
