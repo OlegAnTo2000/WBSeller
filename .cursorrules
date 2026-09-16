@@ -1,0 +1,9 @@
+## Git Commit Messages
+
+Always generate Git commit messages in Russian.
+
+Requirements:
+- Commit messages MUST be written in Russian.
+- Do not generate commit messages in English.
+- Keep technical identifiers, class names, method names, filenames and other code entities in their original form.
+- Keep the message concise and descriptive.
