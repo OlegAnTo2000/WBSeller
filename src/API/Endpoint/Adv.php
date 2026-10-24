@@ -450,11 +450,14 @@ class Adv extends AbstractEndpoint
     }
 
     /**
-     * Рекомендуемые ставки для кампании
-     * 
-     * IMPORTANT: Работает только для CPM кампаний 
-     * IMPORTANT: Максимум 5 запросов в минуту
-     * 
+     * Рекомендуемые ставки для карточки товара и поисковых кластеров кампании
+     *
+     * Работает для кампаний с оплатой за показы (cpm) и за клики (cpc); структура ответа зависит от paymentType:
+     * cpm — base (competitiveBid, leadersBid, top2) и normQueries (reachMin/reachMedium/reachMax);
+     * cpc — levels (range1To2, range3To10, range11To34), кластеров нет. Суммы — bidKopecks, 0,01 валюты профиля.
+     *
+     * Лимит на профиль продавца: 5 запросов в минуту (интервал 12 сек); для базового токена — 20 запросов в час (интервал 3 мин).
+     *
      * @param int $advertId Идентификатор кампании
      * @param int $nmId Идентификатор номенклатуры товара
      * @link https://dev.wildberries.ru/docs/openapi/promotion/#tag/Upravlenie-kampaniyami/paths/~1api~1advert~1v0~1bids~1recommendations/get
