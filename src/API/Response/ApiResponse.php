@@ -37,7 +37,7 @@ final readonly class ApiResponse
         try {
             return json_decode($this->body, $associative, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new ApiResponseDecodingException($exception);
+            throw new ApiResponseDecodingException($exception, $this);
         }
     }
 

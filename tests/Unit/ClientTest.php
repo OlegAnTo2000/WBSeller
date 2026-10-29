@@ -128,6 +128,40 @@ class ClientTest extends TestCase
         $response->json();
     }
 
+    public function testInvalidJsonIncludesResponseDiagnostics(): void
+    {
+        $body = '<html>Proxy failure</html>';
+        $response = $this->clientWithResponses(new Response(200, ['Content-Type' => 'text/html'], $body))
+            ->request('GET', '/test');
+
+        try {
+            $response->json();
+            self::fail('Ожидалась ошибка декодирования');
+        } catch (ApiResponseDecodingException $exception) {
+            self::assertStringContainsString('HTTP 200', $exception->getMessage());
+            self::assertStringContainsString('text/html', $exception->getMessage());
+            self::assertStringContainsString('тело: 26 байт', $exception->getMessage());
+            self::assertStringContainsString($body, $exception->getMessage());
+            self::assertInstanceOf(\JsonException::class, $exception->getPrevious());
+        }
+    }
+
+    public function testInvalidJsonDiagnosticsRedactSecretsAndLimitOutput(): void
+    {
+        $body = 'Bearer private-value token="another-private-value" ' . str_repeat('x', 3000) . 'END';
+        $response = $this->clientWithResponses(new Response(200, [], $body))->request('GET', '/test');
+
+        try {
+            $response->json();
+            self::fail('Ожидалась ошибка декодирования');
+        } catch (ApiResponseDecodingException $exception) {
+            self::assertStringContainsString('[REDACTED]', $exception->getMessage());
+            self::assertStringNotContainsString('private-value', $exception->getMessage());
+            self::assertStringNotContainsString('END', $exception->getMessage());
+            self::assertLessThan(2500, strlen($exception->getMessage()));
+        }
+    }
+
     public function testTransportErrorIsNormalized(): void
     {
         $request = new Request('GET', 'https://example.test/test');
