@@ -331,7 +331,8 @@ class Adv extends AbstractEndpoint
 
     /**
      * Завершение кампании
-     *
+     * IMPORTANT: Максимум 5 запросов в секунду
+     * 
      * @param int $id
      *
      * @return ApiResponse
