@@ -7,3 +7,11 @@ Requirements:
 - Do not generate commit messages in English.
 - Keep technical identifiers, class names, method names, filenames and other code entities in their original form.
 - Keep the message concise and descriptive.
+
+## ClickHouse: конфликты псевдонимов
+
+- Не присваивай вычислению или агрегату имя исходной колонки в том же SELECT: `toString(week) AS week`, `toString(date) AS date`, `sum(cost) AS cost`, `argMax(value, updated_at) AS value`.
+- ClickHouse может подставить выражение псевдонима в WHERE, GROUP BY, HAVING, ORDER BY и другие выражения SELECT: результат — сравнение String с Date/Date32 (`NO_COMMON_TYPE`), вложенный агрегат (`ILLEGAL_AGGREGATION`) или изменение смысла запроса.
+- Используй уникальные внутренние имена (`week_start`, `statistics_date`, `cost_sum`, `latest_value`). Если контракт требует прежние имена, назначай их во внешнем SELECT после фильтрации и агрегации; исходные колонки не должны присутствовать там под конфликтующим именем.
+- Проверяй весь SELECT и вложенные запросы, включая SQL в тестах. Сохраняй типы фильтрации, группировку, порядок и имена полей ответа. Не обходи ошибку сравнением дат как строк, изменением глобальных настроек ClickHouse или подавлением исключения.
+- Тест с подменённым ClickHouse не проверяет разбор SQL: для подтверждения исправления нужен запрос к тестовому ClickHouse; если он не выполнен, укажи это явно.
