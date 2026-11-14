@@ -39,12 +39,36 @@ class AdvFinance
      * Допускается 4 запроса в секунду.
      * @link https://openapi.wb.ru/promotion/api/ru/#tag/Finansy/paths/~1adv~1v1~1budget/get
      *
+     * @deprecated WB отключает метод 16.11.2026, используйте getAdvertsBudgets()
+     *
      * @param int $id Идентификатор кампании
      *
      * @return ApiResponse
      */
     public function getAdvertBudget(int $id): ApiResponse {
         return $this->Adv->getRequest('/adv/v1/budget', ['id' => $id]);
+    }
+
+    /**
+     * Остатки бюджетов кампаний
+     *
+     * Возвращает бюджеты кампаний в статусах 4, 9 и 11; кампаний в других статусах в ответе нет.
+     * Допускается 20 запросов в минуту.
+     * @link https://dev.wildberries.ru/openapi/promotion#tag/Finansy/paths/~1api~1advert~1v2~1budget/post
+     *
+     * @param array<int> $ids Идентификаторы кампаний (от 1 до 50)
+     *
+     * @return ApiResponse
+     *
+     * @throws InvalidArgumentException Количество кампаний вне диапазона 1–50
+     */
+    public function getAdvertsBudgets(array $ids): ApiResponse {
+        $maxCount = 50;
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if ($ids === [] || count($ids) > $maxCount) {
+            throw new InvalidArgumentException('Количество кампаний должно быть от 1 до ' . $maxCount);
+        }
+        return $this->Adv->postRequest('/api/advert/v2/budget', ['advertIds' => $ids]);
     }
 
     /**
