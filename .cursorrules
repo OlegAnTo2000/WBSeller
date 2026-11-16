@@ -22,4 +22,4 @@ Requirements:
 
 ## Keeping Agent Instructions in Sync
 
-When editing any of `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`, update all three in the same change. Keep shared instructions consistent across all three and preserve tool-specific content.
+`AGENTS.md` holds the shared rules. `CLAUDE.md` imports it with `@AGENTS.md` and adds only Claude Code–specific content: do not copy shared rules into it. `.cursorrules` repeats the shared rules Cursor needs. When editing shared rules, update `AGENTS.md` and `.cursorrules` in the same change, and `CLAUDE.md` only if its Claude-specific part is affected. Preserve tool-specific content.
