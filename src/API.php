@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dakword\WBSeller;
 
-use Dakword\WBSeller\API\Endpoint\{ Adv, Analytics, Calendar, Chat, Common, Content, Documents, Feedbacks, Marketplace, Prices, Questions, Recommends, Returns, Statistics, Supplies, Tariffs, Users };
+use Dakword\WBSeller\API\Endpoint\{ Adv, Analytics, Calendar, Chat, Common, Content, Documents, Feedbacks, Finances, Marketplace, Prices, Questions, Recommends, Returns, Statistics, Supplies, Tariffs, Users };
 use Dakword\WBSeller\API\Endpoint\Test;
 
 /**
@@ -37,6 +37,7 @@ class API
         'content'     => 'https://content-api.wildberries.ru',
         'documents'   => 'https://documents-api.wildberries.ru',
         'feedbacks'   => 'https://feedbacks-api.wildberries.ru',
+        'finances'    => 'https://finance-api.wildberries.ru',
         'marketplace' => 'https://marketplace-api.wildberries.ru',
         'prices'      => 'https://discounts-prices-api.wildberries.ru',
         'questions'   => 'https://feedbacks-api.wildberries.ru',
@@ -590,10 +591,23 @@ class API
         );
     }
 
+    public function Finances(): Finances
+    {
+        return new Finances(
+            $this->apiUrls['finances'],
+            $this->getKey('finances'),
+            $this->proxy,
+            $this->locale,
+            $this->middlewares,
+            $this->listeners,
+            $this->verifySsl
+        );
+    }
+
     /**
      * Создаёт клиент API статистики (statistics-api.wildberries.ru).
      *
-     * Поставки, остатки, заказы, продажи, возвраты, детализированные отчёты.
+     * Поставки, остатки, заказы, продажи и возвраты.
      * Внимание: данные доступны с задержкой (обновляются не в реальном времени).
      */
     public function Statistics(): Statistics

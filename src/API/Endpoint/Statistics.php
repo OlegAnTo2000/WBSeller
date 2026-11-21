@@ -140,6 +140,8 @@ class Statistics extends AbstractEndpoint
      * @return ApiResponse
      *
      * @throws InvalidArgumentException
+     *
+     * @deprecated Маршрут отключён. Используйте Finances::salesReportDetails().
      */
     public function detailReport(
         DateTime $dateFrom,
