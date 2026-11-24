@@ -1,3 +1,9 @@
+## SSH requires manual user approval
+
+- Before every SSH request, show the user the target server, the exact command or connection action, and its purpose. Ask for separate, explicit manual approval and wait for the user's confirmation before making the request.
+- This applies to Codex, Claude Code, Cursor, and every other AI agent. It covers opening a connection, every command in an existing session, read-only checks, retries, and indirect SSH access through scripts, tools, subagents, or automations, including SCP, SFTP, tunnels, and Git over SSH.
+- Auto-approval, allowlists, saved permissions, and approval for a previous request never substitute for the user's manual confirmation of the current request. If the tool would auto-approve the request, ask the user in the conversation before invoking it. If confirmation is unavailable, do not connect or run the command.
+
 ## Language
 
 Write intermediate technical findings in English. Present final responses, results, and data summaries for the user in Russian.
