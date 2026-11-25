@@ -119,6 +119,42 @@ class Adv extends AbstractEndpoint
     }
 
     /**
+     * Страница списка рекламных кампаний или выборка по конкретным ID.
+     * Для следующей страницы нужно передать `next` из предыдущего ответа, пока WB не вернёт пустой `next`.
+     * @link https://dev.wildberries.ru/openapi/promotion/#tag/Kampanii/paths/~1api~1advert~1v3~1adverts/get
+     *
+     * @param list<int>|null $advertIds ID кампаний, без других параметров
+     * @param list<int>|null $statuses Статусы кампаний: 4, 7, 9, 11
+     * @param 'cpm'|'cpc'|null $paymentType Тип оплаты
+     */
+    public function apiAdvertV3Adverts(
+        ?array $advertIds = null,
+        ?array $statuses = null,
+        ?string $paymentType = null,
+        ?int $limit = null,
+        ?string $next = null,
+    ): ApiResponse {
+        $data = array_filter([
+            'statuses' => $statuses ? implode(',', $statuses) : null,
+            'paymentType' => $paymentType,
+            'limit' => $limit,
+            'next' => $next === '' ? null : $next,
+        ], static fn (mixed $value): bool => $value !== null);
+
+        if ($advertIds) {
+            if ($data !== []) {
+                throw new InvalidArgumentException('advertIds нельзя передавать вместе с другими параметрами');
+            }
+            $data['advertIds'] = implode(',', $advertIds);
+        }
+        if ($limit !== null && ($limit < 1 || $limit > 50)) {
+            throw new InvalidArgumentException('limit должен быть от 1 до 50');
+        }
+
+        return $this->getRequest('/api/advert/v3/adverts', $data);
+    }
+
+    /**
      * Минимальные ставки для карточек товаров
      * Метод возвращает минимальные ставки для карточек товаров в копейках по типу оплаты и местам размещения.
      * @link https://dev.wildberries.ru/openapi/promotion/#tag/Sozdanie-kampanij/paths/~1api~1advert~1v1~1bids~1min/post
